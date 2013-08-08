@@ -4,4 +4,6 @@ report.blg
 report.log
 report.pdf
 report.toc
+report.out
+report.lof
 figures/*

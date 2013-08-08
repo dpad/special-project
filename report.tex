@@ -1,0 +1,137 @@
+\documentclass[pdftex,11pt,a4paper]{report}
+
+% Using template from runswift/docs/report
+
+\usepackage[dvips]{graphicx} % to include images
+\usepackage{multicol}
+\usepackage{cite}
+\usepackage{listings}
+\usepackage{url}
+\usepackage{paralist}
+\usepackage{versions}
+\usepackage{varioref}
+\usepackage{textcomp}
+\usepackage{amsmath}
+% hyperref and hypcap should be last! 
+% (except for algorithmic, because it conflicts with hyperref)
+\usepackage[breaklinks]{hyperref}
+\renewcommand{\sectionautorefname}{Section}
+\renewcommand{\subsectionautorefname}{Section}
+\renewcommand{\subsubsectionautorefname}{Section}
+\renewcommand{\vref}[1]{\autoref{#1}\vpageref{#1}}
+\usepackage[all]{hypcap}
+\usepackage{algorithmic}
+\usepackage[center]{caption}
+\hypersetup{
+    colorlinks,%
+    citecolor=black,%
+    filecolor=black,%
+    linkcolor=black,%
+    urlcolor=black
+}
+\excludeversion{notesfornextyear}
+\newcommand{\keywords}[1]{\par\addvspace\baselineskip
+\noindent\keywordname\enspace\ignorespaces#1}
+
+\lstset{                        % settings for the code listing package
+language=C++,
+basicstyle=\ttfamily,           % the size of the fonts that are used for the code
+showspaces=false,
+showstringspaces=false,
+showtabs=false,
+tabsize=2,
+captionpos=b,                   % sets the caption-position to bottom
+breaklines=true,                % sets automatic line breaking
+breakatwhitespace=false,        % sets if automatic breaks should only happen at whitespace
+escapeinside={\%*}{*)}          % if you want to add a comment within your code
+}
+
+\setlength{\oddsidemargin}{0.0in}
+\setlength{\evensidemargin}{0.0in}
+\setlength{\topmargin}{-0.25in}
+\setlength{\headheight}{0in}
+\setlength{\headsep}{0in}
+\setlength{\textwidth}{6.5in}
+\setlength{\textheight}{9.25in}
+\setlength{\parindent}{0in}
+\setlength{\parskip}{2mm}
+
+% enable number by subsubsections and let them show in ToC
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{3}
+
+% Style the captions.
+\captionsetup{margin=20pt,font=small,format=hang,labelsep=endash,labelfont={bf}}
+
+% Penalise Latex for splitting footnotes
+\interfootnotelinepenalty=10000
+
+\begin{document}
+
+\begin{titlepage}%
+  \let\footnotesize\small
+  \let\footnoterule\relax
+  \let \footnote \thanks
+  \null\vfil
+  \begin{center}%
+    \vfill
+    \includegraphics[width=4in]{img/unsw_runswift_logo}%
+    \vskip 3em%
+    {\LARGE rUNSWift Special Project A 2013\\Robocup Standard Platform League \par}%
+    \vskip 3em%
+    {\large
+     \lineskip .75em%
+      \begin{tabular}[t]{c}%
+        Dan Padilha
+      \end{tabular}\par}%
+      \vskip 1.5em%
+      \texttt{ddp@cse.unsw.edu.au}%
+\vfill
+    {\large \today \par}%       % Set date in \large size.
+\vfill
+\vskip 3cm
+School of Computer Science \& Engineering\\
+University of New South Wales\\
+Sydney 2052, Australia\\
+
+\vfill
+
+  \end{center}\par
+  \vfil\null
+\thispagestyle{empty}
+  \end{titlepage}%
+
+% ---------------------------------------------
+% Abstract
+% ---------------------------------------------
+\pagenumbering{roman}
+\newpage
+\begin{abstract}
+
+\end{abstract}
+
+% ---------------------------------------------
+% Table of contents
+% ---------------------------------------------
+\newpage
+\setcounter{tocdepth}{2} % 1 for less content, 3 for more.
+\tableofcontents
+\newpage
+\listoffigures
+\pagenumbering{arabic}
+\hypersetup{pageanchor=true}
+
+%======================================================================
+% REPORT
+%======================================================================
+\input{rl_walk}
+\input{new_skillz}
+
+% ---------------------------------------------
+% Bibliography
+% ---------------------------------------------
+\newpage
+\bibliographystyle{plain}
+\bibliography{report}
+
+\end{document}
