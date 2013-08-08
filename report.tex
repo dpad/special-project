@@ -75,21 +75,26 @@ escapeinside={\%*}{*)}          % if you want to add a comment within your code
   \null\vfil
   \begin{center}%
     \vfill
-    \includegraphics[width=4in]{img/unsw_runswift_logo}%
     \vskip 3em%
-    {\LARGE rUNSWift Special Project A 2013\\Robocup Standard Platform League \par}%
+    {\LARGE {THE UNIVERSITY OF NEW SOUTH WALES\\SCHOOL OF COMPUTER SCIENCE AND ENGINEERING} \par}%
     \vskip 3em%
-    {\large
+    \includegraphics[width=3in]{img/unsw_runswift_logo}%
+    \vskip 1.5em%
+    {\LARGE \textbf{rUNSWift Robocup SPL 2013\\Special Project A Report} \par}%
+    \vskip 2em%
+    {\LARGE
      \lineskip .75em%
       \begin{tabular}[t]{c}%
         Dan Padilha
       \end{tabular}\par}%
-      \vskip 1.5em%
+      \vskip 0.5em%
       \texttt{ddp@cse.unsw.edu.au}%
+      \vskip 1.5em%
 \vfill
     {\large \today \par}%       % Set date in \large size.
+    {\large Supervisors: Bernhard Hengst, Maurice Pagnucco \par}%       % Set date in \large size.
 \vfill
-\vskip 3cm
+\vskip 2cm
 School of Computer Science \& Engineering\\
 University of New South Wales\\
 Sydney 2052, Australia\\
@@ -107,6 +112,11 @@ Sydney 2052, Australia\\
 \pagenumbering{roman}
 \newpage
 \begin{abstract}
+This report documents the work done for UNSW's Robocup Standard Platform League (SPL) team \textbf{rUNSWift} during Semester 1, 2013.
+
+The report describes 2013's Open Challenge entry, which applied Reinforcement-Learned sagittal and coronal balancing to the robots in various poses. The entry achieved third place overall in the Open Challenge.
+
+The report also describes the new behaviours framework for the robots, known as NewSkillz. The framework makes writing robot behaviours a much simpler process by abstracting away much of the complexity involved in state changes, and allows for simpler implementation in simulation software.
 
 \end{abstract}
 
@@ -126,6 +136,7 @@ Sydney 2052, Australia\\
 %======================================================================
 \input{rl_walk}
 \input{new_skillz}
+\input{misc}
 
 % ---------------------------------------------
 % Bibliography
