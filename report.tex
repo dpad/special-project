@@ -66,7 +66,12 @@ escapeinside={\%*}{*)}          % if you want to add a comment within your code
 % Penalise Latex for splitting footnotes
 \interfootnotelinepenalty=10000
 
+% Get rid of the "Chapter"
 \renewcommand{\chaptername}{}
+
+% For code comments
+\usepackage{fancyvrb}
+\usepackage{color}
 
 \begin{document}
 
@@ -118,7 +123,7 @@ This report documents the work done for UNSW's Robocup Standard Platform League 
 
 The report describes 2013's Open Challenge entry, which applied Reinforcement-Learned sagittal and coronal balancing to the robots in various poses. The entry achieved third place overall in the Open Challenge.
 
-The report also describes the new behaviours framework for the robots, known as NewSkillz. The framework makes writing robot behaviours a much simpler process by abstracting away much of the complexity involved in state changes, and allows for simpler implementation in simulation software.
+The report also describes the new behaviours framework for the robots, known as NewSkillz. The framework makes writing robot behaviours a much simpler process by abstracting away much of the complexity and redundancy involved in state changes, and its consistent API allows for the easy implementation of a behaviours simulator.
 
 \end{abstract}
 
@@ -130,6 +135,7 @@ The report also describes the new behaviours framework for the robots, known as 
 \tableofcontents
 \newpage
 \listoffigures
+\newpage
 \pagenumbering{arabic}
 \hypersetup{pageanchor=true}
 
