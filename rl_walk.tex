@@ -1,5 +1,5 @@
 \chapter{Reinforcement-Learned Balancing}
-\label{chap:ns}
+\label{chap:rl_walk}
 
 \section{Introduction}
 
@@ -46,8 +46,8 @@ Further work by Liu\cite{liu} in 2012 focused primarily on improving state measu
 
 \section{Theory \& Implementation}
 
-\subsection{RL Policies}
-In learning the policies for the behaviours, Hengst\cite{bernhard_rl} defines a robot model, including as much accuracy in the links, joints, masses, etc. as possible -- an example of this is seen in Figure \ref{fig:lean}. Hengst defined the robot stabilisation state and established cost functions in the form of goal behaviours (such as standing upright), and state transitions as random action exploration, able to automatically identify the system model (i.e. it did not assume an inverted pendulum model). 
+\subsection{Learning the Control Policies}
+In learning the policies for the behaviours, Hengst\cite{bernhard_rl} defines a robot model, including as much accuracy in the links, joints, masses, etc. as possible -- an example of this is seen in Figure~\ref{fig:lean}.
 
 \begin{figure}[h]
 \centering
@@ -56,13 +56,43 @@ In learning the policies for the behaviours, Hengst\cite{bernhard_rl} defines a 
 \label{fig:lean}
 \end{figure}
 
-Hengst's work calculated the transition function between states by observing the state changes in the simulation of the robots when subjected to a random choice of actions (from the set of actions that could be taken) -- the random simulation essentially explored the state space of the model through the actions. This is considered a time-consuming process and is a practically impossible task to achieve using real-life hardware tests (due to the complexity in analysing the environment, something a simulation can do very easily). This state exploration could take several hours to calculate, depending on the desired resolution of states.
+Hengst defines the \textit{state} of the robot using two variables:
+\begin{itemize}
+\item position of the middle of the torso in $m$eters
+\item velocity of the middle of the torso in $\sfrac{m}{s}$
+\end{itemize}
 
-Once the state transitions were known (to whatever degree), it was a simple case of calculating the value of each state-action for any given reward function, and then finding the optimal action to take for a given state-action (that is to say, the action to take depends not only on the current state, but also on the previous action taken). The list of optimal actions for each state-action is then known as the \textit{optimal policy}. A reward function could be easily created for any goal desired, such as standing still or walking on the spot, so long as the goal states were in the set of explored states. Knowing the state transitions also allowed for quick switching between behaviours by simply picking which policy to follow.
+The goal or reward function of a behaviour is therefore based on getting to some state (as in standing still) or reaching some states at a certain time (as in rocking back and forth). Example policies can be seen in Figure~\ref{fig:policy_diagram}.
 
-The optimal policy for any behaviour could then be given as a simple output of numbers, simply being the state-action pair and the corresponding optimal action to take. An excerpt from a policy can be seen below:
+\begin{figure}[!h]
+\centering
+\includegraphics[width=5in]{img/RL_policies.png}
+\caption{Example of learned policies in the two state variables (position and velocity). The policy defines what actions to take which will lead to the state approaching some goal (for example, zero position and velocity for standing still, as in (a)).\cite{bernhard_rl}}
+\label{fig:policy_diagram}
+\end{figure}
+
+Knowing how the state of the environment changes based on actions is what the transition function defines. The transition function is calculated by observing the change between states of the simulation when subjected to a random choice of actions (from the set of actions that could be taken) -- the random simulation essentially explores the state space of the model through the actions. This is a computing-intensive process (taking upwards of several hours to complete, depending on the desired resolution) but is also practically impossible to define through real-life hardware testing (due to the complexity in analysing the environment, something a simulation can do very easily).
+
+Once the state transitions are known (to whatever degree), it is a simple case of calculating the value of each state-action for any given reward function, and then finding the optimal action to take for a given state-action (that is to say, the action to take depends not only on the current state, but also on the previous action taken). The list of optimal actions for each state-action is then known as the \textit{optimal policy}. A reward function can be easily created for any goal desired, such as standing still or walking on the spot, so long as the goal states are in the set of explored states. Knowing the state transitions also allows for quick switching between behaviours by simply picking which policy to follow.
+
+A total of 7 goal states were defined: 6 in the coronal plane (side-to-side motions), and 1 in the sagittal plane (front-to-back motions). These goals were as follows:
+
+\begin{enumerate}
+\item Standing still
+\item Fast pace rocking between feet
+\item Medium pace rocking between feet
+\item Slow pace rocking between feet
+\item Standing on right leg
+\item Standing on left leg
+\item Sagittal: standing still
+\end{enumerate}
+
+The optimal policy for these goals is given as a simple output of numbers, simply being the state-action pair and the corresponding optimal action to take. An example output from a control policy can be seen in Figure~\ref{fig:policy}.
+
+The reinforcement learning then learns the actions required for optimal stabilisation of given behaviours, as well as for the transition between behaviours. These actions are used in the creation of policies, which define the action required for each possible state of the robot. Some simplified example policies can be seen in Figure \ref{fig:policy_diagram}.
 
 
+\begin{figure}[h]
 \newcommand\statehighlight[1]{\textcolor[rgb]{1,0,0}{#1}}
 \newcommand\actionhighlight[1]{\textcolor[rgb]{0,0,1}{#1}}
 \begin{Verbatim}[commandchars=\\\{\},frame=single]
@@ -70,45 +100,43 @@ The optimal policy for any behaviour could then be given as a simple output of n
 // State-action is defined by: Goal, lateral torso position, 
 //                             lateral torso velocity, 
 //                             last action taken
-// Action: 0 for ankle roll left, 1 for no action, 2 for ankle roll right
+// Action: 0 for ankle roll left, 1 for no action, 
+//         2 for ankle roll right
 //  \statehighlight{state-action}    \actionhighlight{action}
    0 -0.08 -0.4  0     0
    0 -0.08 -0.39 0     1
    0 -0.08 -0.38 0     1
    0 -0.08 -0.37 0     2
 \end{Verbatim}
+\caption{An excerpt of a control policy for coronal behaviours.}
+\label{fig:policy}
+\end{figure}
 
-\subsection{}
+\subsection{State Measurement}
 
+The Nao robots contain an Inertial Measurement Unit (IMU) in their chest, consisting of 2 gyrometers and a three-axis accelerometer.\cite{nao_imu} By knowing the location of the IMU, most importantly its height from the bottom of the feet (dimensions given by Aldebaran Robotics), and ensuring this matches with the simulator, one can use simple trigonometry to calculate the required position and velocity state variables, as in Figure~\ref{fig:trig} below.
 
-\subsection{Implementation}
-The work done in this year was an attempt to combine the previous works of Hengst, White, and Liu in order to produce more stable 
+% TODO: inverted pendulum type figure
 
+Work was done on state measurement by Liu\cite{liu} through extensive filtering of the IMU.
 
+\subsection{Policy Implementation}
+
+The work done in this year was an attempt to combine the previous works of Hengst, White, and Liu in order to produce these self-stabilising behaviours, and to explore the application to walk stabilisation.
+
+% TODO: Talk about generic policy file
 
 Much of the work done is in fact an incremental improvement to White's policy implementation, as well as the application of the improved policies done by Hengst.
 
-We begin by defining a robot model, including as much accuracy in the links, joints, masses, etc. as possible -- an example of this is seen in Figure \ref{fig:lean}. We define the robot stabilisation state and establish cost functions in the form of goal behaviours (such as standing upright, for example), and state transitions as random action exploration, able to automatically identify the system model (i.e. we do not assume an inverted pendulum model). 
-
-The reinforcement learning then learns the actions required for optimal stabilisation of given behaviours, as well as for the transition between behaviours. These actions are used in the creation of policies, which define the action required for each possible state of the robot. Some simplified example policies can be seen in Figure \ref{fig:policy}.
 
 The policy tables are then interpreted by the real-world Nao robots, allowing them to mimic the behaviour seen in the simulation by actuating joints to follow the optimal action sequence.
 
 \section{Results}
-For the RoboCup 2013 Open Challenge we plan to demonstrate a robot which is able to self-stabilise with various behaviours, including standing on one leg and jogging on the spot. The robot is also able to seamlessly and optimally transition between these behaviours while maintaining a stable body, something already exceedingly difficult in manual hand-coding of behaviours.
 
-Most importantly, we plan to show the continued stability of a robot even when reacting to disturbances, such as being bumped by another robot. Given the dynamic behaviour of such disturbances, hand-coding is virtually impossible or relies on extensive trial-and-error manual tuning -- whereas this is simply a property of the learned optimal policies for any behaviour, therefore guaranteeing simple automatic stabilisation of the robots after policy learning.
 
 
 Despite disappointing behaviour in the field, the presentation of the work was considered worthy of $3^{rd}$ place in the Open Challenge.
 
-
-\begin{figure}[!t]
-\centering
-\includegraphics[width=3.5in]{img/RL_policies.png}
-\caption{Simplified example of learned policies. Here we see the transition functions between the behaviours of: (a) switching between a slow walk-on-the-spot to standing upright; (b) standing upright to walk-on-the-spot; (c) walk-on-the-spot to standing on right leg; (d) standing on left leg to standing upright.}
-\label{fig:policy}
-\end{figure}
 
 
 \section{Evaluation}

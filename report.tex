@@ -69,9 +69,10 @@ escapeinside={\%*}{*)}          % if you want to add a comment within your code
 % Get rid of the "Chapter"
 \renewcommand{\chaptername}{}
 
-% For code comments
+% Extra packages
 \usepackage{fancyvrb}
 \usepackage{color}
+\usepackage{xfrac}
 
 \begin{document}
 
@@ -133,8 +134,6 @@ The report also describes the new behaviours framework for the robots, known as 
 \newpage
 \setcounter{tocdepth}{2} % 1 for less content, 3 for more.
 \tableofcontents
-\newpage
-\listoffigures
 \newpage
 \pagenumbering{arabic}
 \hypersetup{pageanchor=true}
