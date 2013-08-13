@@ -114,11 +114,15 @@ The reinforcement learning then learns the actions required for optimal stabilis
 
 \subsection{State Measurement}
 
-The Nao robots contain an Inertial Measurement Unit (IMU) in their chest, consisting of 2 gyrometers and a three-axis accelerometer.\cite{nao_imu} By knowing the location of the IMU, most importantly its height from the bottom of the feet (dimensions given by Aldebaran Robotics), and ensuring this matches with the simulator, one can use simple trigonometry to calculate the required position and velocity state variables, as in Figure~\ref{fig:trig} below.
+The Nao robots contain an Inertial Measurement Unit (IMU) in their chest, consisting of 2 gyrometers and a three-axis accelerometer.\cite{nao_imu} By knowing the location of the IMU, most importantly its height from the bottom of the feet (dimensions given by Aldebaran Robotics), and ensuring this matches with the simulator, one can use simple trigonometry to calculate the required position and velocity state variables. 
 
-% TODO: inverted pendulum type figure
 
-Work was done on state measurement by Liu\cite{liu} through extensive filtering of the IMU.
+% TODO figure
+As seen in Figure~\ref{fig:trig}, we can define a simple axis system from the IMU, with the $x$-axis pointing towards the front of the robot, the $y$-axis towards the side, and the $z$-axis pointing down to the ground. This coordinate system also applies to the three-axis accelerometer, which provides a $\sfrac{m}{s^2}$ acceleration reading for each of these axes. This can be used to help calibrate the gyrometer readings, as the accelerometer should expect to read $9.81\sfrac{m}{s^2}$ for the $z$-axis and $0\sfrac{m}{s^2}$ for the $x$- and $y$-axes when the robot is standing upright and still.
+
+The position and velocity of the IMU is taken with respect to its neutral position, when the robot is standing upright. In this way, it is expected that the coronal (side to side) position of the IMU is exactly centered between the two feet. Given a gyroscopic measurement, when standing upright the torso is expected to be at a 
+
+Work was done on state measurement by Liu\cite{liu} through extensive filtering of the IMU's measurements.
 
 \subsection{Policy Implementation}
 
@@ -133,6 +137,13 @@ The policy tables are then interpreted by the real-world Nao robots, allowing th
 
 \section{Results}
 
+The three-axis accelerometer was found to be too noisy to be of any significant use. While standing still, the accelerometer would report a large acceleration reading in the $z$-axis (as expected due to gravity), but also non-zero and wildly fluctuating accelerations in the $x$- and $y$-axes. Heavy filtering of these was found to be ineffective, as the offset from zero tended to drift randomly.
+
+
+
+Overall results of the policy implementation were mixed. Sagittal self-balancing control when standing still was found to be a significant improvement over no control policy. Upon being disturbed, the robot would actuate its hip motors and oscillate its body back into an upright position. This was objectively more effective method than when the robot's stiff body was simply allowed to rock back and forth with no use of the controller, as the test results show below.
+
+% TODO Table of test results
 
 
 Despite disappointing behaviour in the field, the presentation of the work was considered worthy of $3^{rd}$ place in the Open Challenge.

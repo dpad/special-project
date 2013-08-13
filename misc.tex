@@ -1,5 +1,48 @@
-\chapter{Other Work}
+\chapter{Other Improvements}
 \label{chap:misc}
+
+This section describes any other significant improvements made to the rUNSWift codebase which may be useful for future years.
 
 \section{Drop-In Player Challenge}
 
+One of the challenges this year was the Drop-In Player Challenge, which required robots to communicate and cooperate on teams comprising robots from other teams. Thanks to rUNSWift's existing framework as designed by the 2010 team\cite{runswift_2010}, this was a relatively simple task to achieve.
+
+\subsection{Implementation}
+
+The challenge expected robots to communicate using a common $C$ structure, sent as a single network packet and broadcast to the entire team on a specific port. The necessary broadcast structure, seen below, was extremely close to the one already existing for robot communication by the 2010 design. 
+
+\lstset { %
+    language=C++,
+    backgroundcolor=\color{black!5}, % set backgroundcolor
+    basicstyle=\footnotesize,% basic font setting
+}
+\begin{lstlisting}
+struct DropInBroadcastInfo {
+    char header[4];    // "PkUp"
+    int playerNum;     // 1-5
+    int team;          // 0 is red 1 is blue
+    float pos[3];      // position of the robot in cm, x,y,theta
+    float posVar[3];   // position covariance
+    float ballAge;     // seconds since this robot last saw the ball. else -1
+    float ball[2];     // position of the ball
+    float ballVar[2];  // covariance of position of the ball
+    float ballVel[2];  // velocity of the ball
+    float penalized;   // seconds the robot has been penalized or -1
+    float fallen;      // seconds the robot has been fallen or -1
+
+};
+\end{lstlisting}
+
+The only change deemed necessary for a cooperative robot was therefore to swap the Receiver and Transmitter modules with ones capable of converting between the \textit{DropInBroadcastInfo } structure and rUNSWift's \textit{BroadcastInfo} structure.
+
+New variables required, such as ball velocity, were easy to implement as they were already calculated and stored in the Blackboard by the perception thread. Some rUNSWift specific variables, such as current action being performed, had to be removed. The result were two new modules: DropInReceiver for analysing information from team-mates, and DropInTransmitter for broadcasting data to team-mates.
+
+One can easily switch between the DropIn and normal Receiver/Transmitter modules by setting the configuration option ``\textit{game.type}'' to ``\textit{DROP\_IN}''.
+
+\subsection{Results}
+
+As expected, rUNSWift's robots reacted as if they were playing on teams with their own robots. They demonstrated team work with the other robots by switching roles depending on their team-mates' positions. The behaviour was enough to give rUNSWift a $3^{rd}$ place overall in the challenge.
+
+While no issues with the implementation were observed, it is worthy of noting that for this year the \textit{DropInBroadcastInfo} structure was considered an \textit{optional} part of the challenge. Reading the broadcast packets showed that at least half of the teams were not sending the same structure, and as such could only be considered to be sending garbage (as there is no way of determining what information they were providing). This resulted in less team-work than expected, as some robots were effectivelynot communicating. The judges acknowledged this problem in hindsight; the competition is expected to be run again in the future with tighter restrictions, as such, the work presented will prove useful once again.
+
+% TODO: \section{New Competition Behaviours}
