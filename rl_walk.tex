@@ -122,7 +122,14 @@ As seen in Figure~\ref{fig:trig}, we can define a simple axis system from the IM
 
 The position and velocity of the IMU is taken with respect to its neutral position, when the robot is standing upright. In this way, it is expected that the coronal (side to side) position of the IMU is exactly centered between the two feet. The two gyrometers provide an angular measurement of the torso, being the angle of lean about the $x$-axis (the coronal ``roll'') and the lean about the $y$-axis (the sagittal ``pitch''), as seen in Figure~\ref{fig:trig}. When standing upright the torso is expected to be at a pitch angle of $0\degree$ relative to the hip pitch (which depends on the way the legs are bent while in a standing position), and a roll angle of $0\degree$.
 
-Now, if we assume small perturbations to the torso (in other words, only small pitch and roll angles will be in the state space of the policy), then we can approximate the position of the torso by simply using the gyrometer measurements and the known height of the IMU from the base of the feet. This is simple because, for a small angle, the % TODO arc angle
+Now, if we assume small perturbations to the torso (in other words, only small pitch and roll angles will be in the state space of the policy), then we can approximate the position of the torso by simply using the gyrometer measurements and the known height of the IMU from the base of the feet. As seen in Figure~\ref{fig:triangle}, we have an isosceles triangle (with two equal sides being the height of the IMU) and the angle between them is known. We can easily calculate the horizontal displacement of the IMU by with $pos = H * \sin{\theta}$. Furthermore, for small angles of $|\theta| < 20\degree$, we know that $\sin{\theta} \approx \theta$ (in radians). Thus, we can approximate the lateral position of the IMU by simply multiplying the lean measurement by some constant close to the known height.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=1.5in]{img/lean_trig.png}
+\caption{The coronal state variables are the lateral position and velocity of the IMU in the torso of the Nao robots.}
+\label{fig:triangle}
+\end{figure}
 
 Work was done on state measurement by Liu\cite{liu} through extensive filtering of the IMU's measurements.
 
@@ -153,4 +160,7 @@ Despite disappointing behaviour in the field, the presentation of the work was c
 
 
 \section{Future Work}
+
+% TODO More complex state measurement
+
 \section{Conclusions}
