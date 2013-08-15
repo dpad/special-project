@@ -46,7 +46,10 @@ Further work by Liu\cite{liu} in 2012 focused primarily on improving state measu
 
 \section{Theory \& Implementation}
 
+The work presented involves an attempt to combine the previous works of Hengst, White, and Liu in order to produce these self-stabilising behaviours, and to explore the application to walk stabilisation. Below we detail the theory and implementation of the major aspects of this work, which include: control policies, state measurement, and software integration.
+
 \subsection{Learning the Control Policies}
+\label{sec:learning_policies}
 In learning the policies for the behaviours, Hengst\cite{bernhard_rl} defines a robot model, including as much accuracy in the links, joints, masses, etc. as possible -- an example of this is seen in Figure~\ref{fig:lean}.
 
 \begin{figure}[h]
@@ -113,7 +116,7 @@ The optimal policies are then given as a simple output of numbers, being the sta
 \vspace{-10pt}
 \end{figure}
 
-\subsection{State Measurement}
+\subsection{State Measurement on Hardware}
 
 The Nao robots contain an Inertial Measurement Unit (IMU) in their chest, consisting of 2 gyrometers and a three-axis accelerometer.\cite{nao_imu} By knowing the location of the IMU, most importantly its height from the bottom of the feet (dimensions given by Aldebaran Robotics), and ensuring this matches with the simulator, one can use simple trigonometry to calculate the required position and velocity state variables. 
 
@@ -139,7 +142,19 @@ The position and velocity of the IMU is taken with respect to its neutral positi
 \label{fig:total}
 \end{figure}
 
-If we assume small perturbations to the torso (in other words, only small pitch and roll angles will be in the state space of the policy), then we can approximate the position of the torso by simply using the gyrometer measurements and the known height of the IMU from the base of the feet. As seen in Figure~\ref{fig:triangle}, which shows a lean in the $x$-axis (or a coronal ``roll''), we can easily calculate the horizontal displacement of the IMU by with $pos = H * \sin{\theta}$. Furthermore, for small angles of $|\theta| < 20\degree$, we know that $\sin{\theta} \approx \theta$ (in radians). Thus, we can approximate the lateral position of the IMU by simply multiplying the lean measurement by some constant close to the known height.
+If we assume small perturbations to the torso (in other words, only small pitch and roll angles will be in the state space of the policy), then we can approximate the position of the torso by simply using the gyrometer measurements and the known height of the IMU from the base of the feet. As seen in Figure~\ref{fig:triangle}, which shows a lean in the $x$-axis (or a coronal ``roll''), we can easily calculate the horizontal displacement of the IMU by with: 
+
+\begin{equation} \label{eq:height}
+x_t = H * \sin{\theta_t}
+\end{equation}
+
+where $x_t$ is the position state variable at time $t$, $H$ is some constant (the height of the IMU), and $\theta_t$ is the angle of the torso lean at time $t$.
+
+Furthermore, for small angles of $|\theta| < 20~30\degree$, we know that $\sin{\theta} \approx \theta$ (in radians). Thus, we can approximate the lateral position of the IMU by simplifying Equation\ref{eq:height}:
+
+\begin{equation} \label{eq:simplified}
+x_t = H\theta_t
+\end{equation}
 
 The velocity can be found in one of two ways:
 \begin{itemize}
@@ -147,11 +162,13 @@ The velocity can be found in one of two ways:
 \item Differentiate the position readings of the desired axis over time.
 \end{itemize}
 
-Both of these are relatively simple to achieve. In theory, integrating the accelerometer readings should provide an accurate velocity at all instants of time. Differentiating the position however means that only the instantaneous velocity is reported, as:
+Both of these are relatively simple to achieve. In theory, integrating the accelerometer readings should provide an accurate velocity at all instants of time. Differentiating the position however means that only the instantaneous velocity is reported, as in:
 
-$v_t = (x_t - x_{t-1}) * f$
+\begin{equation}
+v_t = (x_t - x_{t-1}) * f
+\end{equation}
 
-where $v_t$ is the velocity at time $t$, $x_t$ is the position at time $t$, and $f$ is the tick rate of measurements (i.e. $100Hz$ for $100$ ticks per second). This gives a $\sfrac{m}{s}$ reading as required.
+where $v_t$ is the velocity at time $t$, $x_t$ is the position at time $t$, and $f$ is the tick rate of measurements (i.e. $100Hz$ for the motion thread). This gives a $\sfrac{m}{s}$ measurement as required.
 
 For the sagittal pitch, a similar process is followed. If we project lines extending out from the feet in the orientation they are facing, and take a line exactly in between them, then the position of the body in the sagittal plane is the distance of the torso from its neutral position, as seen in Figure~\ref{fig:sagittal}.
 
@@ -165,13 +182,19 @@ For the sagittal pitch, a similar process is followed. If we project lines exten
   \label{fig:sagittal}
 \end{figure}
 
-Work was done on state measurement by Liu\cite{liu} through extensive filtering of the IMU's measurements.
+Work was done on similar state measurement by Liu\cite{liu} through extensive filtering of the IMU's measurements. This had resulted in an inverted pendulum model which calculated a filtered angle for the torso lean. This filter remained in place for angular measurements. In order to maintain a relatively stable position state variable, a simple filter was used:
 
-\subsection{Policy Implementation}
+\begin{equation}
+x^\star_t = \alpha * H\theta_t + (1 - \alpha) * H\theta_{t-1}
+\end{equation}
 
-The work done in this year was an attempt to combine the previous works of Hengst, White, and Liu in order to produce these self-stabilising behaviours, and to explore the application to walk stabilisation.
+where, $x^\star_t$ is the filtered position state variable at time $t$, $H\theta_t$ is as in Equation~\ref{eq:simplified}, and $\alpha$ is a filtering rate between $0$ and $1$ (how much of the current measurement to use in the filter).
 
-% TODO: Talk about generic policy file
+Attempts were made to also measure The state variables through integration of the accelerometer data, but, as the results in Section~\ref{sec:rl_results} show, were too unstable to be of any use.
+
+\subsection{Software Implementation}
+
+As defined in Section~\ref{sec:learning_policies},
 
 Much of the work done is in fact an incremental improvement to White's policy implementation, as well as the application of the improved policies done by Hengst.
 
@@ -179,11 +202,12 @@ Much of the work done is in fact an incremental improvement to White's policy im
 The policy tables are then interpreted by the real-world Nao robots, allowing them to mimic the behaviour seen in the simulation by actuating joints to follow the optimal action sequence.
 
 \section{Results}
+\label{sec:rl_results}
 %TODO \section{Evaluation}
 
-The three-axis accelerometer was found to be too noisy to be of any significant use. While standing still, the accelerometer would report a large acceleration reading in the $z$-axis (as expected due to gravity), but also non-zero and wildly fluctuating accelerations in the $x$- and $y$-axes. Heavy filtering of these was found to be ineffective, as the offset from zero tended to drift randomly.
+The three-axis accelerometer was found to be too noisy to be of any significant use. While standing still, the accelerometer would report a large acceleration reading in the $z$-axis (as expected due to gravity), but also non-zero and wildly fluctuating accelerations in the $x$- and $y$-axes. Heavy filtering of these was found to be ineffective, as the offset from zero tended to drift randomly and in a non-Gaussian manner (making it difficult to filter).
 
-
+Similar results were observed with the gyrometers, which provided extremely noisy measurements, although still providing a somewhat stable and accurate reading for the torso angle. 
 
 Overall results of the policy implementation were mixed. Sagittal self-balancing control when standing still was found to be a significant improvement over no control policy. Upon being disturbed, the robot would actuate its hip motors and oscillate its body back into an upright position. This was objectively more effective method than when the robot's stiff body was simply allowed to rock back and forth with no use of the controller, as the test results show below.
 
@@ -196,5 +220,9 @@ Despite disappointing behaviour in the field, the presentation of the work was c
 \section{Future Work}
 
 % TODO More complex state measurement
+
+State measurement is currently the biggest obstacle to overcome. Finding a reliable and accurate way to measure the robot's body state is by far the biggest contributor to future stability work. More complex state measurement may involve the use of the Nao's joint position sensors to create a map of the robot's body in three-dimensional space, along with accelerometer and gyrometer data to determine attitude.
+
+It is possible that simpler state measurement, such as tried in the work presented, may still allow for sufficient results through the use of more advanced filtering. The seemingly non-Gaussian nature of the noise in the sensors presented a challenge not able to be overcome by the author. However, as the results showed, even crude filtering could be used to some effect for the simpler stability problems like standing still.
 
 \section{Conclusions}
