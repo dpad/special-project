@@ -44,9 +44,10 @@ White's\cite{white} 2011 implementation of a simulator-learned policy for a walk
 
 Further work by Liu\cite{liu} in 2012 focused primarily on improving state measurement by introducing heavy filtering of the Inertial Measurement Unit (IMU) located in the chest of the Naos. While the demonstrated filters worked well, Liu found that the underlying assumptions in the filter (that the robot is standing still, upright, and approximates an inverted pendulum) were not sufficient when introducing more complex motion such as a walking gait.
 
+\newpage
 \section{Theory \& Implementation}
 
-The work presented involves an attempt to combine the previous works of Hengst, White, and Liu in order to produce these self-stabilising behaviours, and to explore the application to walk stabilisation. Below we detail the theory and implementation of the major aspects of this work, which include: control policies, state measurement, and software integration.
+The work presented involves an attempt to combine the previous works of Hengst, White, and Liu in order to produce these self-stabilising behaviours, and to explore the application to walk stabilisation. Below we detail the theory and implementation of the major aspects of this work, which include: learning the control policies, measuring the current state, and interpreting the policies in the software.
 
 \subsection{Learning the Control Policies}
 \label{sec:learning_policies}
@@ -115,13 +116,67 @@ The optimal policies are then given as a simple output of numbers, being the sta
 \label{fig:policy}
 \end{figure}
 
+Hengst defines a total of 7 goals, mentioned earlier in this section. These goals and the actions available to the optimal policy calculations are described below:
+
+\subsubsection{Sagittal Goals}
+\label{sec:sagittal}
+
+In the sagittal plane, only one goal is defined: standing still and upright.
+
+As described by Hengst\cite{sagittal}, the goal defined for standing still is to return to a state of $(0,0,2)$. This corresponds to returning to a neutral torso position (with no velocity and at a zero position) and then take no action.
+
+As a sagittal policy, we are concerned with movement of the torso in the sagittal plane (in other words, leaning forward or back). The possible actions involve actuating the hip and ankle pitch in order to return the leaning torso to the neutral position. The actions are defined very simply as:
+
+\begin{equation} \label{eq:sagittal}
+\delta = 0.01 * (\text{action} - 2)
+    \end{equation}
+
+The value of $\delta$ is the \textit{adjustment} in radians added to the hip and ankle pitch angles. We let action be an integer from $0$ to $4$, so that Equation~\ref{eq:sagittal} defines a $\pm0.02$ radians adjustment, $\pm0.01$ radians adjustment, or no adjustment at all (in the case of action $2$) to the motors.
+
+On every tick the current state is defined, the next action is looked up from the policy, and the following occurs:
+
+\begin{lstlisting}
+float adjustment = 0.01 * (action - 2);
+jointAngle[Joint.LAnklePitch.iD()]  += adjustment;
+jointAngle[Joint.RAnklePitch.iD()]  += adjustment;
+jointAngle[Joint.LHipPitch.iD()]    += adjustment;
+jointAngle[Joint.RHipPitch.iD()]    += adjustment;
+\end{lstlisting}
+
+\subsubsection{Coronal Goals}
+\label{sec:coronal}
+
+In the coronal plane, six goals are defined. The policies for these goals are a little more complex than for sagittal, so further information should be sought in the technical documentation provided by Hengst.\cite{coronal}
+
+The coronal goals include: standing still, fast, medium, and slow pace rocks from foot to foot, and standing still on either leg.
+
+As some of the goals require a swaying of the robot's hips from side to side to shift the weight between either foot, part of the policy defines a \textit{hip sway} variable as simply a constant multipllied by the current lateral position of the torso.
+
+For the coronal plane, only side-to-side movement is important, so the actions involve actuating the hip and ankle roll motors. The actions are defined as:
+
+\begin{equation} \label{eq:sagittal}
+\delta = 0.045 * (\text{action} - 1)
+\end{equation}
+
+where $\delta$ is the adjustment in radians, and actions are $0$ to $2$, such that action $1$ means no adjustment.
+
+Again, on every tick the current state is defined, the next action is looked up from the policy, and the behaviour below occurs. It is important to note that some other updates and calculations are also performed depending on which goal is required (for example, lifting up the legs when necessary).
+
+\begin{lstlisting}
+float adjustment  = 0.045 * (action - 1);
+float hipSway     = 4 * position;
+jointAngle[Joint.LAnkleRoll.iD()] = -hipSway + adjustment;
+jointAngle[Joint.RAnkleRoll.iD()] = -hipSway + adjustment;
+jointAngle[Joint.LHipRoll.iD()]   = hipSway;
+jointAngle[Joint.RHipRoll.iD()]   = hipSway; 
+\end{lstlisting}
+
+
 \subsection{State Measurement on Hardware}
 
 The Nao robots contain an Inertial Measurement Unit (IMU) in their chest, consisting of 2 gyrometers and a three-axis accelerometer.\cite{nao_imu} By knowing the location of the IMU, most importantly its height from the bottom of the feet (dimensions given by Aldebaran Robotics), and ensuring this matches with the simulator, one can use simple trigonometry to calculate the required position and velocity state variables. 
 
 As seen in Figure~\ref{fig:trig}, we can define a simple axis system from the IMU, with the $x$-axis pointing towards the front of the robot, the $y$-axis towards the side, and the $z$-axis pointing down to the ground. This coordinate system applies to the three-axis accelerometer, which provides a $\sfrac{m}{s^2}$ acceleration reading for each of these axes. The accelerometer readings can be used to help calibrate the gyrometer, as the accelerometer should expect to read $9.81\sfrac{m}{s^2}$ for the $z$-axis and $0\sfrac{m}{s^2}$ for the $x$- and $y$-axes when the robot is standing upright and still.
-
-The position and velocity of the IMU is taken with respect to its neutral position, when the robot is standing upright. In this way, it is expected that the coronal (side to side) position of the IMU is exactly centered between the two feet. The two gyrometers provide an angular measurement of the torso, being the angle of lean about the $x$-axis (which we shall call the \textit{coronal roll}) and the lean about the $y$-axis (the \textit{sagittal pitch}), as seen in Figure~\ref{fig:trig}. Note that coronal and sagittal refer to the planes dividing a body into front-back and left-right sides respectively. When standing upright the torso is expected to be at a pitch angle of $0\degree$ relative to the hip pitch (which depends on the way the legs are bent while in a standing position), and a roll angle of $0\degree$.
 
 \begin{figure}[h]
 \centering
@@ -141,6 +196,8 @@ The position and velocity of the IMU is taken with respect to its neutral positi
 \label{fig:total}
 \end{figure}
 
+The position and velocity of the IMU is taken with respect to its neutral position, when the robot is standing upright. In this way, it is expected that the coronal (side to side) position of the IMU is exactly centered between the two feet. The two gyrometers provide an angular measurement of the torso, being the angle of lean about the $x$-axis (which we shall call the \textit{coronal roll}) and the lean about the $y$-axis (the \textit{sagittal pitch}), as seen in Figure~\ref{fig:trig}. Note that coronal and sagittal refer to the planes dividing a body into front-back and left-right sides respectively. When standing upright the torso is expected to be at a pitch angle of $0\degree$ relative to the hip pitch (which depends on the way the legs are bent while in a standing position), and a roll angle of $0\degree$.
+
 If we assume small perturbations to the torso (in other words, only small pitch and roll angles will be in the state space of the policy), then we can approximate the position of the torso by simply using the gyrometer measurements and the known height of the IMU from the base of the feet. As seen in Figure~\ref{fig:triangle}, which shows a lean in the $x$-axis (or a coronal roll), we can easily calculate the horizontal displacement of the IMU by with: 
 
 \begin{equation} \label{eq:height}
@@ -149,7 +206,7 @@ x_t = H * \sin{\theta_t}
 
 where $x_t$ is the position state variable at time $t$, $H$ is some constant (the height of the IMU), and $\theta_t$ is the angle of the torso lean at time $t$.
 
-Furthermore, for small angles of $|\theta| < 20~30\degree$, we know that $\sin{\theta} \approx \theta$ (in radians). Thus, we can approximate the lateral position of the IMU by simplifying Equation\ref{eq:height}:
+Furthermore, for small angles of $|\theta| < 30\degree$, we know that $\sin{\theta} \approx \theta$ (in radians). Thus, we can approximate the lateral position of the IMU by simplifying Equation\ref{eq:height}:
 
 \begin{equation} \label{eq:simplified}
 x_t = H\theta_t
@@ -187,15 +244,17 @@ Work was done on similar state measurement by Liu\cite{liu} through extensive fi
 x^\star_t = \alpha * H\theta_t + (1 - \alpha) * H\theta_{t-1}
 \end{equation}
 
-where, $x^\star_t$ is the filtered position state variable at time $t$, $H\theta_t$ is as in Equation~\ref{eq:simplified}, and $\alpha$ is a filtering rate between $0$ and $1$ (how much of the current measurement to use in the filter).
+For the filter, $x^\star_t$ is the filtered position state variable at time $t$, $H\theta_t$ is as in Equation~\ref{eq:simplified}, and $\alpha$ is a filtering rate between $0$ and $1$ (how much of the current measurement to use in the filter).
 
-Attempts were made to also measure The state variables through integration of the accelerometer data, but, as the results in Section~\ref{sec:rl_results} show, were too unstable to be of any use.
+Attempts were made to also measure the state variables through integration of the accelerometer data, but, as the results in Section~\ref{sec:rl_results} show, these measurements were too unstable to be of any use.
 
-\subsection{Software Implementation}
+\subsection{Generic Policy Interpreter}
 
 As defined in Section~\ref{sec:learning_policies} and seen in Figure~\ref{fig:policy}, the reinforcement-learned control policies are output as a \textit{policy file} of $(\text{state-action}, \text{action})$ tuples. For the sake of generality, we will now refer to these as $(\text{state, action})$ pairs. The policy files are then parsed by the Nao's software during runtime initialisation and used as necessary for making decisions about actions to take. A simple parser and interpreter was used by White for the 2010 RL implementation. The work presented here is an improvement to White's implementation, as well as the application of the improved policies created by Hengst.
 
-First, we define the format of a policy file as in Figure~\ref{fig:policy_def}:
+\subsubsection{Generic Policy File}
+
+First, we define a generic policy file format as in Figure~\ref{fig:policy_def}:
 
 \begin{figure}[h]
 \newcommand\commenthigh[1]{\textcolor[rgb]{0,0.5,0}{#1}}
@@ -219,7 +278,7 @@ We define some terms:
 
 \begin{description}
 \item[State] -- A list of values defining a state. For the RL policy files, the state comprises the tuple of (goal, position, velocity, last action taken). These four values are defined as a possible ``state'' of the robot at any given time.
-\item[Action] -- A single value of type \textit{Action} which defines what action to take. The \textit{Action} type is defined in the codebase, and currently is simply an integer value.
+\item[Action] -- A single value of type \texttt{Action} which defines what action to take. The \textit{Action} type is defined in the codebase, and currently is simply an integer value.
 \item[Comment] -- A line beginning with $//$ which is completely ignored by the parser.
 \item[Resolution] -- This line contains exactly one number for every state variable. This number defines the exact distance between states for the respective state variable. In the example above, the third state variable (velocity) can only differ in steps of size $0.01$ exactly. Thus, $-0.40$ and $-0.39$ are valid velocity states, but $-0.395$ is not.
 \end{description}
@@ -331,24 +390,50 @@ We define some terms:
 %   }
 %}
 
-The policy tables are then interpreted by the real-world Nao robots, allowing them to mimic the behaviour seen in the simulation by actuating joints to follow the optimal action sequence.
+\subsubsection{RLPlanner}
 
+On initialisation, the class parses a generic policy file and stores it in a lookup table. Depending on the resolution of the files, this may take up to several seconds per file.
+
+A generic policy file is parsed by creating a map from states to an \texttt{Action} type. The  mappings are stored in a \verb!C++! \texttt{map<vector<int>, Action>} variable, essentially an $n$-dimensional lookup table, where $n$ is the number of state variables.
+
+First, a vector of state variable resolutions is stored.
+
+Next, each state is parsed. To allow for simpler state approximation and mapping lookup, each value is converted to an integer by dividing the resolution of the variable. For example, a value of $-0.39$ in a resolution of $0.01$ becomes the integer $-39$. The values of the state are stored as a single integer vector.
+
+
+A simple interface function can be used to lookup an action from this table:
+
+\begin{lstlisting}
+// Get the next action given the state variables x1, x2, ..., xn
+Action a = rlplanner->getAction(x1, x2, ..., xn);
+\end{lstlisting}
+
+The \texttt{getAction} function automatically rounds the state variables to the nearest state before performing the lookup.
+
+\subsubsection{Using the RLPlanner}
+
+A motion generator may use a policy file by creating an instance of the \texttt{RLPlanner} class.
+
+A motion generator, such as \texttt{StandGenerator} (which defines the behaviour for standing upright and still), simply creates an instance of \texttt{RLPlanner} for each required policy file, then on every tick looks up an action to perform, and then performs it. The actions performed are those defined in Sections~\ref{sec:sagittal}~and~\ref{sec:coronal}.
+
+\newpage
 \section{Results}
 \label{sec:rl_results}
-%TODO \section{Evaluation}
+Several policies were tested through the \texttt{StandGenerator} with mixed success. The sagittal standing still controller proved to be most successful and is described in more detail below. The similar coronal controller resulted in random oscillations of the robot due to the extra hip sway. These random oscillations sometimes diverged and quickly destabilised the robot, even with extremely heavy filtering of the gyrometer measurements. Due to a lack of reasonable results, the goals of rocking from foot to foot were not attempted.
 
 The three-axis accelerometer was found to be too noisy to be of any significant use. While standing still, the accelerometer would report a large acceleration reading in the $z$-axis (as expected due to gravity), but also non-zero and wildly fluctuating accelerations in the $x$- and $y$-axes. Heavy filtering of these was found to be ineffective, as the offset from zero tended to drift randomly and in a non-Gaussian manner (making it difficult to filter).
 
 Similar results were observed with the gyrometers, which provided extremely noisy measurements, although still providing a somewhat stable and accurate reading for the torso angle. 
 
-Overall results of the policy implementation were mixed. Sagittal self-balancing control when standing still was found to be a significant improvement over no control policy. Upon being disturbed, the robot would actuate its hip motors and oscillate its body back into an upright position. This was objectively more effective method than when the robot's stiff body was simply allowed to rock back and forth with no use of the controller, as the test results show below.
+Overall results of the policy implementation were mixed. Sagittal self-balancing control when standing still was found to be a significant improvement over no control policy. Upon being disturbed, the robot would actuate its hip motors and oscillate its body back into an upright position. This was objectively more effective method than when the robot's stiff body was simply allowed to rock back and forth with no use of the controller, as the test results show in Table~\ref{tab:results}.
 
 % TODO Table of test results
 
+However, no
 
-Despite disappointing behaviour in the field, the presentation of the work was considered worthy of $3^{rd}$ place in the Open Challenge.
+Despite the disappointing initial results, the work was presented at Robocup 2013 in The Netherlands for the Standard Platform League Open Challenge. The theoretical results of Hengst's work\cite{bernhard_rl} were described, a short video of simulated policies was shown (also by Hengst), and a the functioning standing policy was demonstrated against a robot with no control policy. rUNSWift's Open Challenge entry was awarded $3^{rd}$ place.
 
-
+\newpage
 \section{Future Work}
 
 % TODO More complex state measurement
@@ -357,4 +442,7 @@ State measurement is currently the biggest obstacle to overcome. Finding a relia
 
 It is possible that simpler state measurement, such as tried in the work presented, may still allow for sufficient results through the use of more advanced filtering. The seemingly non-Gaussian nature of the noise in the sensors presented a challenge not able to be overcome by the author. However, as the results showed, even crude filtering could be used to some effect for the simpler stability problems like standing still.
 
+Further improvements can also be made to the generic policy file interpreter. Most importantly, sharing a single policy file between multiple generators is a function that should be added, as currently the system may read and store in memory the same policy file multiple times if called by multiple motion generators. No memory or performance issues were found during testing, but it is possible that large C++ maps may not be the most efficient structure for storage, and this should be further investigated if deemed necessary.
+
+\newpage
 \section{Conclusions}
