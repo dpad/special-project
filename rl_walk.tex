@@ -160,7 +160,7 @@ For the coronal plane, only side-to-side movement is important, so the actions i
 
 where $\delta$ is the adjustment in radians, and actions are $0$ to $2$, such that action $1$ means no adjustment.
 
-Again, on every tick the current state is defined, the next action is looked up from the policy, and the behaviour below occurs. It is important to note that some other updates and calculations are also performed depending on which goal is required (for example, lifting up the legs when necessary).
+Again, on every tick the current state is defined, the next action is looked up from the policy, and the behaviour below occurs. It is important to note that some other updates and calculations are also performed depending on which goal is required (for example, lifting up the legs when necessary). Notice that the hip sway adjustment is added to the ankle and hip rolls in opposition to each other.
 
 \begin{lstlisting}
 float adjustment  = 0.045 * (action - 1);
@@ -170,7 +170,6 @@ jointAngle[Joint.RAnkleRoll.iD()] = -hipSway + adjustment;
 jointAngle[Joint.LHipRoll.iD()]   = hipSway;
 jointAngle[Joint.RHipRoll.iD()]   = hipSway; 
 \end{lstlisting}
-
 
 \subsection{State Measurement on Hardware}
 
@@ -283,112 +282,6 @@ We define some terms:
 \item[Resolution] -- This line contains exactly one number for every state variable. This number defines the exact distance between states for the respective state variable. In the example above, the third state variable (velocity) can only differ in steps of size $0.01$ exactly. Thus, $-0.40$ and $-0.39$ are valid velocity states, but $-0.395$ is not.
 \end{description}
 
-%/* Reads in an RL file.
-% * Arguments:
-% *    plannerFile -> string name of the rl file
-% *
-% * The expected format of an RL file is as follows:
-% * x1 x2 x3 ... xn action
-% * where:
-% *    x1 .. xn are the state variables
-% *    action is the action to be taken given all of the above
-% *
-% * Note: Lines beginning with // or blank lines are ignored.
-% * Note: the first line of the policy MUST be the multiple line.
-% *       If x1..xn are non-integers, we divide them by a multiple
-% *       so that we get an integer multiple. For example, if
-% *       x1 has values 0.3, 0.6, 0.9, 1.2, etc., then we set its
-% *       multiple value to be 0.3. We assume there is a 0 state.
-% *       Thus, the multiple line must consist of a multiple value
-% *       for all x1 .. xn columns.
-% */
-%bool RLPlanner::loadFile(std::string plannerFile) {
-%   llog(INFO) << "Loading " << plannerFile.c_str() << endl;
-%   ifstream f(plannerFile.c_str());   
-%   if (!f.is_open()) return false;
-%
-%   // Get each of the columns in the first line and store them
-%   // into the multiples vector.
-%   string line = "";
-%   while((line = getLineNoComments(f)) == "");
-%   stringstream s(line);
-%   for (double tmp; s >> tmp; multiples.push_back(tmp));
-%
-%   // Go through each line in the policy file
-%   while (f.good()) {
-%      if ((line = getLineNoComments(f)) == "") continue;
-%      stringstream s(line);
-%
-%      // Grab all the state columns, and put them into an
-%      // integer state vector.
-%      vector<int> state;
-%      for (int i = 0; i < (int)multiples.size(); i++){
-%          double tmp;
-%          s >> tmp;
-%          state.push_back(round(tmp / multiples.at(i)));
-%      }
-%
-%      // Get the action, which should be the last column
-%      Action action;
-%      s >> action;
-%
-%      // Finally, store the state vector into the policy map.
-%      policy[state] = action;
-%   }
-%   f.close();
-%   llog(INFO) << "Finished loading." << endl;
-%   return true;
-%}
-%
-%string RLPlanner::getLineNoComments(ifstream &f) {
-%   while (f.good()) {
-%      std::string line;
-%      getline(f, line);
-%
-%      // throw away commented lines
-%      if (!(line[0] == '/' && line[1] == '/')) return line;
-%   }
-%   return "";
-%}
-%
-%/* Gets the action given the state variables, in the same order
-% * as those in the policy table. Assumes state variables are floats,
-% * and divides them by their multiple as required, such that they become
-% * the nearest integer index.
-% *
-% * Note: ARGUMENTS *MUST* BE FLOATS/DOUBLES
-% *
-% * use as such: 
-% *     Action a = getAction(x1, x2, x3, ... xn);
-% */
-%Action RLPlanner::getAction(double x, ...) {
-%   // Store the state variables (i.e. arguments) in a vector
-%   vector<int> state;
-%
-%   // Push the first argument on, since it's not in the va_list
-%   // printf("%f -> ", x);
-%   state.push_back(round(x / multiples.at(0)));
-%
-%   // Push the rest of the arguments on to the state vector
-%   va_list vl;
-%   va_start(vl, x);
-%   for (int i = 1; i < (int)multiples.size(); i++){
-%       double tmp = va_arg(vl, double);
-%       // printf("%f -> ", tmp);
-%       state.push_back(round(tmp / multiples.at(i)));
-%   }
-%   va_end(vl);
-%
-%   try{
-%       // Get the next action based on the state in the policy table.
-%       // printf("%d\n", policy.at(state));
-%       return policy.at(state);
-%   } catch (const std::out_of_range& e){
-%       // Couldn't find anything close to that state in the policy table,
-%       // so return an invalid action.
-%       return INVALID_ACTION;
-%   }
-%}
 
 \subsubsection{RLPlanner}
 
@@ -421,15 +314,38 @@ A motion generator, such as \texttt{StandGenerator} (which defines the behaviour
 \label{sec:rl_results}
 Several policies were tested through the \texttt{StandGenerator} with mixed success. The sagittal standing still controller proved to be most successful and is described in more detail below. The similar coronal controller resulted in random oscillations of the robot due to the extra hip sway. These random oscillations sometimes diverged and quickly destabilised the robot, even with extremely heavy filtering of the gyrometer measurements. Due to a lack of reasonable results, the goals of rocking from foot to foot were not attempted.
 
-The three-axis accelerometer was found to be too noisy to be of any significant use. While standing still, the accelerometer would report a large acceleration reading in the $z$-axis (as expected due to gravity), but also non-zero and wildly fluctuating accelerations in the $x$- and $y$-axes. Heavy filtering of these was found to be ineffective, as the offset from zero tended to drift randomly and in a non-Gaussian manner (making it difficult to filter).
+Sagittal self-balancing control when standing still was found to be a significant improvement over no control policy. Upon being disturbed, the robot would actuate its hip motors and oscillate its body back into an upright position. When reacting to being pushed by human touch, the difference with and without the control policy could easily be felt, though it was somewhat more difficult to quantifiably verify. Simple tests were performed of releasing the robot from a certain lean angle with and without the control policy. The results of these tests can be seen in Table~\ref{tab:results} below, which shows a slight improved performance when using the control policy.
 
-Similar results were observed with the gyrometers, which provided extremely noisy measurements, although still providing a somewhat stable and accurate reading for the torso angle. 
+% TODO
+\begin{table}[h]
+  \centering
+    \begin{tabular}{ r|c|c| }
+    \multicolumn{1}{r}{}
+     &  \multicolumn{1}{c}{no controller}
+     & \multicolumn{1}{c}{sagittal controller} \\
+    \cline{2-3}
+    $5\degree$ &  &  \\
+    \cline{2-3}
+    $10\degree$ &  &  \\
+    \cline{2-3}
+    $15\degree$ &  &  \\
+    \cline{2-3}
+    $20\degree$ &  &  \\
+    \cline{2-3}
+    $25\degree$ &  &  \\
+    \cline{2-3}
+    $30\degree$ &  &  \\
+    \cline{2-3}
+    \end{tabular}
+  \caption{Table of number of times robot was able to self-stabilise after being placed in a given sagittal angle.}
+  \label{tab:results}
+\end{table}
 
-Overall results of the policy implementation were mixed. Sagittal self-balancing control when standing still was found to be a significant improvement over no control policy. Upon being disturbed, the robot would actuate its hip motors and oscillate its body back into an upright position. This was objectively more effective method than when the robot's stiff body was simply allowed to rock back and forth with no use of the controller, as the test results show in Table~\ref{tab:results}.
+A minor point to be made was when the robot was in a standing still state, very tiny actuations still happened in the motors, causing a very small (basically imperceptible) oscillation of the torso back and forth. It is likely that this was caused by the significant noise apparent in the gyrometer measurements, and the constant actuation could potentially cause more wear on the motors than without the control policy.
 
-% TODO Table of test results
+The three-axis accelerometer was found to be too noisy to be of any significant use for any state measurements. While standing still, the accelerometer would report a large acceleration reading in the $z$-axis (as expected due to gravity), but also non-zero and wildly fluctuating accelerations in the $x$- and $y$-axes. Heavy filtering of these was found to be ineffective, as the offset from zero tended to drift randomly and in a non-Gaussian manner (making it difficult to filter). Integrating the non-Gaussian noise of course lead to a runaway velocity, which made the accelerometer unusable for measuring state.
 
-However, no
+Similar issues were observed with the gyrometers, which provided extremely noisy measurements. However, the gyrometers provided a somewhat more stable and accurate reading for the torso angle than the noisy accelerometers. The angle measurement was enough for the sagittal goal to work as mentioned above.
 
 Despite the disappointing initial results, the work was presented at Robocup 2013 in The Netherlands for the Standard Platform League Open Challenge. The theoretical results of Hengst's work\cite{bernhard_rl} were described, a short video of simulated policies was shown (also by Hengst), and a the functioning standing policy was demonstrated against a robot with no control policy. rUNSWift's Open Challenge entry was awarded $3^{rd}$ place.
 
@@ -442,7 +358,11 @@ State measurement is currently the biggest obstacle to overcome. Finding a relia
 
 It is possible that simpler state measurement, such as tried in the work presented, may still allow for sufficient results through the use of more advanced filtering. The seemingly non-Gaussian nature of the noise in the sensors presented a challenge not able to be overcome by the author. However, as the results showed, even crude filtering could be used to some effect for the simpler stability problems like standing still.
 
+It is quite likely that relying on the angle measurement of the torso for coronal policies is not suffcient. A potential theory for this may be the opposing forces of the hip sway on the ankle and hip joints acting to restore the torso to a zero angle but leaving the torso in a laterally displaced location. However, as the position state variable is calculated only based on torso angle, it's possible that the robot would assume it to be back in a neutral position in this case. Further investigation is required.
+
 Further improvements can also be made to the generic policy file interpreter. Most importantly, sharing a single policy file between multiple generators is a function that should be added, as currently the system may read and store in memory the same policy file multiple times if called by multiple motion generators. No memory or performance issues were found during testing, but it is possible that large C++ maps may not be the most efficient structure for storage, and this should be further investigated if deemed necessary.
 
-\newpage
 \section{Conclusions}
+The work presented proves that control policies learned on simulations of the robots can be successfully used to perform self-stabilisation on the robots. This proves that the theory is sound and applicable to real-life hardware, and eventually applicable to more stable bipedal behaviours. A generic policy file format has been defined and an improved policy interpreter written. Both tools can be further improved for use in future exploration of RL applications.
+
+Major failure points have been identified in state measurement. If the work presented here is to be expanded on, more must be done on improving the accuracy of measuring the robot's current position and velocity.
