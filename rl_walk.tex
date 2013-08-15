@@ -1,4 +1,4 @@
-\chapter{Reinforcement-Learned Balancing}
+\chapter{Reinforcement-Learned Stabilisation}
 \label{chap:rl_walk}
 
 \section{Introduction}
@@ -14,7 +14,7 @@ The learned behaviours aimed to react to a greater number of states than hand-pr
 \newpage
 \section{Background \& Related Work}
 
-Reinforcement Learning (RL) is a method of deriving software models for behaviour through machine learning. RL is used to automatically determine a model for actions to be taken given an ``environment state'' such that the maximum ``reward'' can be achieved. In the context of stability control for bipedal robots, RL results in a software model (known as a \textit{policy}) which states what motors the robot should actuate and in what manner, given that the robot is in some state (the environment state) and wants to reach some position (the reward).
+Reinforcement Learning (RL) is a method of deriving software models for behaviour through machine learning. RL is used to automatically determine a model for actions to be taken given an \textit{environment state} such that the maximum \textit{reward} can be achieved. In the context of stability control for bipedal robots, RL results in a software model (known as a \textit{policy}) which states what motors the robot should actuate and in what manner, given that the robot is in some state (the environment state) and wants to reach some position (the reward).
 
 An RL model is defined by:\cite{bernhard_rl}
 
@@ -28,7 +28,7 @@ An RL model is defined by:\cite{bernhard_rl}
 %The Q-learning -> learns to assign values to (s,a) pairs.
 %Given a particular action in a particular state, followed by actions which follow a particular policy, the agent will receive a particular set of reinforcement.
 
-RL works by finding a function which gives the value of taking a particular action when in a particular state and then following the optimal policy thereafter. The optimal value is therefore the best one of the possible actions that can be taken at a given state. The ``value'' of each state-action is dependent on the reward -- taking actions which lead to rewards quickly is of higher value, taking actions which lead to slow or negative rewards is of lower value.
+RL works by finding a function which gives the value of taking a particular action when in a particular state and then following the optimal policy thereafter. The optimal value is therefore the best one of the possible actions that can be taken at a given state. The \textit{value} of each state-action is dependent on the reward -- taking actions which lead to rewards quickly is of higher value, taking actions which lead to slow or negative rewards is of lower value.
 
 The work presented in this report relies primarily on the application of RL research done by Hengst\cite{bernhard_rl}. Hengst's work involved the use of a simulated environment for the robot, allowing for fast reinforcement learning of optimal policies for various behaviours (defined by their cost (inverse of reward) functions), including:
 
@@ -94,10 +94,10 @@ A total of 7 goal states were defined: 6 in the coronal plane (side-to-side moti
 
 The RL process learns the actions required for optimal stabilisation of these goals, and the result can be used to easily transition between the goals by simply following the policy of a new goal. The optimal policies, which define the action required for each possible state, are then defined. Some simplified example policies can be seen earlier in Figure \ref{fig:policy_diagram}.
 
-The optimal policies are then given as a simple output of numbers, being the state-action pair and the corresponding optimal action to take. An example output from a control policy can be seen in Figure~\ref{fig:policy}. This is known as a ``policy file'', which can then be interpreted by the robot's software.
+The optimal policies are then given as a simple output of numbers, being the state-action pair and the corresponding optimal action to take. An example output from a control policy can be seen in Figure~\ref{fig:policy}. This is known as a \textit{policy file}, which can then be interpreted by the robot's software.
 
 \begin{figure}[h]
-\newcommand\statehighlight[1]{\textcolor[rgb]{1,0,0}{#1}}
+\newcommand\statehighlight[1]{\textcolor[rgb]{0,1,0}{#1}}
 \newcommand\actionhighlight[1]{\textcolor[rgb]{0,0,1}{#1}}
 \begin{Verbatim}[commandchars=\\\{\},frame=single]
 // Policy table for 6 Coronal behaviours
@@ -110,10 +110,9 @@ The optimal policies are then given as a simple output of numbers, being the sta
    0 -0.08 -0.38 0     1
    0 -0.08 -0.37 0     2
 \end{Verbatim}
-\vspace{-20pt}
+\vspace{-15pt}
 \caption{An excerpt of a control policy for coronal behaviours.}
 \label{fig:policy}
-\vspace{-10pt}
 \end{figure}
 
 \subsection{State Measurement on Hardware}
@@ -122,7 +121,7 @@ The Nao robots contain an Inertial Measurement Unit (IMU) in their chest, consis
 
 As seen in Figure~\ref{fig:trig}, we can define a simple axis system from the IMU, with the $x$-axis pointing towards the front of the robot, the $y$-axis towards the side, and the $z$-axis pointing down to the ground. This coordinate system applies to the three-axis accelerometer, which provides a $\sfrac{m}{s^2}$ acceleration reading for each of these axes. The accelerometer readings can be used to help calibrate the gyrometer, as the accelerometer should expect to read $9.81\sfrac{m}{s^2}$ for the $z$-axis and $0\sfrac{m}{s^2}$ for the $x$- and $y$-axes when the robot is standing upright and still.
 
-The position and velocity of the IMU is taken with respect to its neutral position, when the robot is standing upright. In this way, it is expected that the coronal (side to side) position of the IMU is exactly centered between the two feet. The two gyrometers provide an angular measurement of the torso, being the angle of lean about the $x$-axis (which we can call the coronal ``roll'') and the lean about the $y$-axis (the sagittal ``pitch''), as seen in Figure~\ref{fig:trig}. Note that ``coronal'' and ``sagittal'' refer to the planes dividing a body into front-back and left-right sides respectively.  When standing upright the torso is expected to be at a pitch angle of $0\degree$ relative to the hip pitch (which depends on the way the legs are bent while in a standing position), and a roll angle of $0\degree$.
+The position and velocity of the IMU is taken with respect to its neutral position, when the robot is standing upright. In this way, it is expected that the coronal (side to side) position of the IMU is exactly centered between the two feet. The two gyrometers provide an angular measurement of the torso, being the angle of lean about the $x$-axis (which we shall call the \textit{coronal roll}) and the lean about the $y$-axis (the \textit{sagittal pitch}), as seen in Figure~\ref{fig:trig}. Note that coronal and sagittal refer to the planes dividing a body into front-back and left-right sides respectively. When standing upright the torso is expected to be at a pitch angle of $0\degree$ relative to the hip pitch (which depends on the way the legs are bent while in a standing position), and a roll angle of $0\degree$.
 
 \begin{figure}[h]
 \centering
@@ -142,7 +141,7 @@ The position and velocity of the IMU is taken with respect to its neutral positi
 \label{fig:total}
 \end{figure}
 
-If we assume small perturbations to the torso (in other words, only small pitch and roll angles will be in the state space of the policy), then we can approximate the position of the torso by simply using the gyrometer measurements and the known height of the IMU from the base of the feet. As seen in Figure~\ref{fig:triangle}, which shows a lean in the $x$-axis (or a coronal ``roll''), we can easily calculate the horizontal displacement of the IMU by with: 
+If we assume small perturbations to the torso (in other words, only small pitch and roll angles will be in the state space of the policy), then we can approximate the position of the torso by simply using the gyrometer measurements and the known height of the IMU from the base of the feet. As seen in Figure~\ref{fig:triangle}, which shows a lean in the $x$-axis (or a coronal roll), we can easily calculate the horizontal displacement of the IMU by with: 
 
 \begin{equation} \label{eq:height}
 x_t = H * \sin{\theta_t}
@@ -194,10 +193,143 @@ Attempts were made to also measure The state variables through integration of th
 
 \subsection{Software Implementation}
 
-As defined in Section~\ref{sec:learning_policies},
+As defined in Section~\ref{sec:learning_policies} and seen in Figure~\ref{fig:policy}, the reinforcement-learned control policies are output as a \textit{policy file} of $(\text{state-action}, \text{action})$ tuples. For the sake of generality, we will now refer to these as $(\text{state, action})$ pairs. The policy files are then parsed by the Nao's software during runtime initialisation and used as necessary for making decisions about actions to take. A simple parser and interpreter was used by White for the 2010 RL implementation. The work presented here is an improvement to White's implementation, as well as the application of the improved policies created by Hengst.
 
-Much of the work done is in fact an incremental improvement to White's policy implementation, as well as the application of the improved policies done by Hengst.
+First, we define the format of a policy file as in Figure~\ref{fig:policy_def}:
 
+\begin{figure}[h]
+\newcommand\commenthigh[1]{\textcolor[rgb]{0,0.5,0}{#1}}
+\begin{Verbatim}[commandchars=\\\{\},frame=single]
+\commenthigh{// Comments are lines beginning with //}
+\commenthigh{// The first non-comment line is the "resolution"}
+   1     0.002   0.01  1
+\commenthigh{// Each subsequent line defines a (state, action)}
+\commenthigh{// goal  pos     vel  last    action}
+   0    -0.080  -0.40  0        0
+   0    -0.080  -0.39  1        1
+   1    -0.080  -0.38  0        1
+   1    -0.080  -0.37  1        2
+\end{Verbatim}
+\vspace{-15pt}
+\caption{Definition of a policy file.}
+\label{fig:policy_def}
+\end{figure}
+
+We define some terms:
+
+\begin{description}
+\item[State] -- A list of values defining a state. For the RL policy files, the state comprises the tuple of (goal, position, velocity, last action taken). These four values are defined as a possible ``state'' of the robot at any given time.
+\item[Action] -- A single value of type \textit{Action} which defines what action to take. The \textit{Action} type is defined in the codebase, and currently is simply an integer value.
+\item[Comment] -- A line beginning with $//$ which is completely ignored by the parser.
+\item[Resolution] -- This line contains exactly one number for every state variable. This number defines the exact distance between states for the respective state variable. In the example above, the third state variable (velocity) can only differ in steps of size $0.01$ exactly. Thus, $-0.40$ and $-0.39$ are valid velocity states, but $-0.395$ is not.
+\end{description}
+
+%/* Reads in an RL file.
+% * Arguments:
+% *    plannerFile -> string name of the rl file
+% *
+% * The expected format of an RL file is as follows:
+% * x1 x2 x3 ... xn action
+% * where:
+% *    x1 .. xn are the state variables
+% *    action is the action to be taken given all of the above
+% *
+% * Note: Lines beginning with // or blank lines are ignored.
+% * Note: the first line of the policy MUST be the multiple line.
+% *       If x1..xn are non-integers, we divide them by a multiple
+% *       so that we get an integer multiple. For example, if
+% *       x1 has values 0.3, 0.6, 0.9, 1.2, etc., then we set its
+% *       multiple value to be 0.3. We assume there is a 0 state.
+% *       Thus, the multiple line must consist of a multiple value
+% *       for all x1 .. xn columns.
+% */
+%bool RLPlanner::loadFile(std::string plannerFile) {
+%   llog(INFO) << "Loading " << plannerFile.c_str() << endl;
+%   ifstream f(plannerFile.c_str());   
+%   if (!f.is_open()) return false;
+%
+%   // Get each of the columns in the first line and store them
+%   // into the multiples vector.
+%   string line = "";
+%   while((line = getLineNoComments(f)) == "");
+%   stringstream s(line);
+%   for (double tmp; s >> tmp; multiples.push_back(tmp));
+%
+%   // Go through each line in the policy file
+%   while (f.good()) {
+%      if ((line = getLineNoComments(f)) == "") continue;
+%      stringstream s(line);
+%
+%      // Grab all the state columns, and put them into an
+%      // integer state vector.
+%      vector<int> state;
+%      for (int i = 0; i < (int)multiples.size(); i++){
+%          double tmp;
+%          s >> tmp;
+%          state.push_back(round(tmp / multiples.at(i)));
+%      }
+%
+%      // Get the action, which should be the last column
+%      Action action;
+%      s >> action;
+%
+%      // Finally, store the state vector into the policy map.
+%      policy[state] = action;
+%   }
+%   f.close();
+%   llog(INFO) << "Finished loading." << endl;
+%   return true;
+%}
+%
+%string RLPlanner::getLineNoComments(ifstream &f) {
+%   while (f.good()) {
+%      std::string line;
+%      getline(f, line);
+%
+%      // throw away commented lines
+%      if (!(line[0] == '/' && line[1] == '/')) return line;
+%   }
+%   return "";
+%}
+%
+%/* Gets the action given the state variables, in the same order
+% * as those in the policy table. Assumes state variables are floats,
+% * and divides them by their multiple as required, such that they become
+% * the nearest integer index.
+% *
+% * Note: ARGUMENTS *MUST* BE FLOATS/DOUBLES
+% *
+% * use as such: 
+% *     Action a = getAction(x1, x2, x3, ... xn);
+% */
+%Action RLPlanner::getAction(double x, ...) {
+%   // Store the state variables (i.e. arguments) in a vector
+%   vector<int> state;
+%
+%   // Push the first argument on, since it's not in the va_list
+%   // printf("%f -> ", x);
+%   state.push_back(round(x / multiples.at(0)));
+%
+%   // Push the rest of the arguments on to the state vector
+%   va_list vl;
+%   va_start(vl, x);
+%   for (int i = 1; i < (int)multiples.size(); i++){
+%       double tmp = va_arg(vl, double);
+%       // printf("%f -> ", tmp);
+%       state.push_back(round(tmp / multiples.at(i)));
+%   }
+%   va_end(vl);
+%
+%   try{
+%       // Get the next action based on the state in the policy table.
+%       // printf("%d\n", policy.at(state));
+%       return policy.at(state);
+%   } catch (const std::out_of_range& e){
+%       // Couldn't find anything close to that state in the policy table,
+%       // so return an invalid action.
+%       return INVALID_ACTION;
+%   }
+%}
 
 The policy tables are then interpreted by the real-world Nao robots, allowing them to mimic the behaviour seen in the simulation by actuating joints to follow the optimal action sequence.
 
