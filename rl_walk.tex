@@ -52,6 +52,7 @@ In learning the policies for the behaviours, Hengst\cite{bernhard_rl} defines a 
 \begin{figure}[h]
 \centering
 \includegraphics[width=3.5in]{img/RL_lean.png}
+\vspace{-10pt}
 \caption{The Nao robots modelled as a $23 DOF$ (Degree of Freedom) system in (b). \cite{bernhard_rl}}
 \label{fig:lean}
 \end{figure}
@@ -67,6 +68,7 @@ The goal or reward function of a behaviour is therefore based on getting to some
 \begin{figure}[!h]
 \centering
 \includegraphics[width=5in]{img/RL_policies.png}
+\vspace{-10pt}
 \caption{Example of learned policies in the two state variables (position and velocity). The policy defines what actions to take which will lead to the state approaching some goal (for example, zero position and velocity for standing still, as in (a)).\cite{bernhard_rl}}
 \label{fig:policy_diagram}
 \end{figure}
@@ -87,10 +89,9 @@ A total of 7 goal states were defined: 6 in the coronal plane (side-to-side moti
 \item Sagittal: standing still
 \end{enumerate}
 
-The optimal policy for these goals is given as a simple output of numbers, simply being the state-action pair and the corresponding optimal action to take. An example output from a control policy can be seen in Figure~\ref{fig:policy}.
+The RL process learns the actions required for optimal stabilisation of these goals, and the result can be used to easily transition between the goals by simply following the policy of a new goal. The optimal policies, which define the action required for each possible state, are then defined. Some simplified example policies can be seen earlier in Figure \ref{fig:policy_diagram}.
 
-The reinforcement learning then learns the actions required for optimal stabilisation of given behaviours, as well as for the transition between behaviours. These actions are used in the creation of policies, which define the action required for each possible state of the robot. Some simplified example policies can be seen in Figure \ref{fig:policy_diagram}.
-
+The optimal policies are then given as a simple output of numbers, being the state-action pair and the corresponding optimal action to take. An example output from a control policy can be seen in Figure~\ref{fig:policy}. This is known as a ``policy file'', which can then be interpreted by the robot's software.
 
 \begin{figure}[h]
 \newcommand\statehighlight[1]{\textcolor[rgb]{1,0,0}{#1}}
@@ -98,29 +99,27 @@ The reinforcement learning then learns the actions required for optimal stabilis
 \begin{Verbatim}[commandchars=\\\{\},frame=single]
 // Policy table for 6 Coronal behaviours
 // State-action is defined by: Goal, lateral torso position, 
-//                             lateral torso velocity, 
-//                             last action taken
-// Action: 0 for ankle roll left, 1 for no action, 
-//         2 for ankle roll right
+//                             lateral torso velocity, last action taken
+// Action: 0 for ankle roll left, 1 for none, 2 for ankle roll right
 //  \statehighlight{state-action}    \actionhighlight{action}
    0 -0.08 -0.4  0     0
    0 -0.08 -0.39 0     1
    0 -0.08 -0.38 0     1
    0 -0.08 -0.37 0     2
 \end{Verbatim}
+\vspace{-20pt}
 \caption{An excerpt of a control policy for coronal behaviours.}
 \label{fig:policy}
+\vspace{-10pt}
 \end{figure}
 
 \subsection{State Measurement}
 
 The Nao robots contain an Inertial Measurement Unit (IMU) in their chest, consisting of 2 gyrometers and a three-axis accelerometer.\cite{nao_imu} By knowing the location of the IMU, most importantly its height from the bottom of the feet (dimensions given by Aldebaran Robotics), and ensuring this matches with the simulator, one can use simple trigonometry to calculate the required position and velocity state variables. 
 
-As seen in Figure~\ref{fig:trig}, we can define a simple axis system from the IMU, with the $x$-axis pointing towards the front of the robot, the $y$-axis towards the side, and the $z$-axis pointing down to the ground. This coordinate system also applies to the three-axis accelerometer, which provides a $\sfrac{m}{s^2}$ acceleration reading for each of these axes. This can be used to help calibrate the gyrometer readings, as the accelerometer should expect to read $9.81\sfrac{m}{s^2}$ for the $z$-axis and $0\sfrac{m}{s^2}$ for the $x$- and $y$-axes when the robot is standing upright and still.
+As seen in Figure~\ref{fig:trig}, we can define a simple axis system from the IMU, with the $x$-axis pointing towards the front of the robot, the $y$-axis towards the side, and the $z$-axis pointing down to the ground. This coordinate system applies to the three-axis accelerometer, which provides a $\sfrac{m}{s^2}$ acceleration reading for each of these axes. The accelerometer readings can be used to help calibrate the gyrometer, as the accelerometer should expect to read $9.81\sfrac{m}{s^2}$ for the $z$-axis and $0\sfrac{m}{s^2}$ for the $x$- and $y$-axes when the robot is standing upright and still.
 
-% TODO fig:trig
-
-The position and velocity of the IMU is taken with respect to its neutral position, when the robot is standing upright. In this way, it is expected that the coronal (side to side) position of the IMU is exactly centered between the two feet. The two gyrometers provide an angular measurement of the torso, being the angle of lean about the $x$-axis (the coronal ``roll'') and the lean about the $y$-axis (the sagittal ``pitch''), as seen in Figure~\ref{fig:trig}. When standing upright the torso is expected to be at a pitch angle of $0\degree$ relative to the hip pitch (which depends on the way the legs are bent while in a standing position), and a roll angle of $0\degree$.
+The position and velocity of the IMU is taken with respect to its neutral position, when the robot is standing upright. In this way, it is expected that the coronal (side to side) position of the IMU is exactly centered between the two feet. The two gyrometers provide an angular measurement of the torso, being the angle of lean about the $x$-axis (which we can call the coronal ``roll'') and the lean about the $y$-axis (the sagittal ``pitch''), as seen in Figure~\ref{fig:trig}. Note that ``coronal'' and ``sagittal'' refer to the planes dividing a body into front-back and left-right sides respectively.  When standing upright the torso is expected to be at a pitch angle of $0\degree$ relative to the hip pitch (which depends on the way the legs are bent while in a standing position), and a roll angle of $0\degree$.
 
 \begin{figure}[h]
 \centering
@@ -136,11 +135,35 @@ The position and velocity of the IMU is taken with respect to its neutral positi
   \caption{State variables}
   \label{fig:triangle}
 \end{subfigure}
-\caption{(a) The definition of the $x$-, $y$-, and $z$-axes from the IMU's accelerometers, and the lean angles from the gyrometers.\\(b) The coronal state variables are the lateral position and velocity of the IMU in the torso of the Nao robots. $\theta$ is the coronal roll angle.}
+\caption{(a) The definition of the $x$-, $y$-, and $z$-axes from the IMU's accelerometers, and the lean angles from the gyrometers.\\(b) The coronal state variables are the lateral position and velocity along the $y$-axis of the IMU in the torso of the Nao robots. $\theta$ is the coronal roll angle given by the gyrometer.}
 \label{fig:total}
 \end{figure}
 
 If we assume small perturbations to the torso (in other words, only small pitch and roll angles will be in the state space of the policy), then we can approximate the position of the torso by simply using the gyrometer measurements and the known height of the IMU from the base of the feet. As seen in Figure~\ref{fig:triangle}, which shows a lean in the $x$-axis (or a coronal ``roll''), we can easily calculate the horizontal displacement of the IMU by with $pos = H * \sin{\theta}$. Furthermore, for small angles of $|\theta| < 20\degree$, we know that $\sin{\theta} \approx \theta$ (in radians). Thus, we can approximate the lateral position of the IMU by simply multiplying the lean measurement by some constant close to the known height.
+
+The velocity can be found in one of two ways:
+\begin{itemize}
+\item Integrate the accelerometer readings in the desired axis over time, or,
+\item Differentiate the position readings of the desired axis over time.
+\end{itemize}
+
+Both of these are relatively simple to achieve. In theory, integrating the accelerometer readings should provide an accurate velocity at all instants of time. Differentiating the position however means that only the instantaneous velocity is reported, as:
+
+$v_t = (x_t - x_{t-1}) * f$
+
+where $v_t$ is the velocity at time $t$, $x_t$ is the position at time $t$, and $f$ is the tick rate of measurements (i.e. $100Hz$ for $100$ ticks per second). This gives a $\sfrac{m}{s}$ reading as required.
+
+For the sagittal pitch, a similar process is followed. If we project lines extending out from the feet in the orientation they are facing, and take a line exactly in between them, then the position of the body in the sagittal plane is the distance of the torso from its neutral position, as seen in Figure~\ref{fig:sagittal}.
+
+\begin{figure}[h]
+  \vspace{-10pt}
+  \begin{center}
+    \includegraphics[width=0.48\textwidth]{img/sagittal_feet.png}
+  \end{center}
+  \vspace{-30pt}
+  \caption{The sagittal $x$-axis is always defined as being forward from the IMU (or center of the torso). The neutral point (i.e. the origin) is the location of the IMU when the robot is in a standing pose, shown here as the red dot.}
+  \label{fig:sagittal}
+\end{figure}
 
 Work was done on state measurement by Liu\cite{liu} through extensive filtering of the IMU's measurements.
 
