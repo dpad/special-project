@@ -5,7 +5,7 @@ This section describes any other significant improvements made to the rUNSWift c
 
 \section{Drop-In Player Challenge}
 
-One of the challenges this year was the Drop-In Player Challenge, which required robots to communicate and cooperate on teams comprising robots from other teams. Thanks to rUNSWift's existing framework as designed by the 2010 team\cite{runswift_2010}, this was a relatively simple task to achieve.
+One of the challenges this year was the Drop-In Player Challenge, which required robots to communicate and cooperate on teams comprising robots from other teams. This work expands on rUNSWift's existing modular framework as defined by the 2010 design\cite{runswift_2010}.
 
 \subsection{Implementation}
 
@@ -39,10 +39,16 @@ New variables required, such as ball velocity, were easy to implement as they we
 
 One can easily switch between the DropIn and normal Receiver/Transmitter modules by setting the configuration option \texttt{game.type} to \texttt{DROP\_IN}.
 
-\subsection{Results}
+\subsection{Results \& Evaluation}
 
 As expected, rUNSWift's robots reacted as if they were playing on teams with their own robots. They demonstrated team work with the other robots by switching roles depending on their team-mates' positions. The behaviour was enough to give rUNSWift a $3^{rd}$ place overall in the challenge.
 
-While no issues with the implementation were observed, it is worthy of noting that for this year the \texttt{DropInBroadcastInfo} structure was considered an \textit{optional} part of the challenge. Reading the broadcast packets showed that at least half of the teams were not sending the same structure, and as such could only be considered to be sending garbage (as there is no way of determining what information they were providing). This resulted in less team-work than expected, as some robots were effectivelynot communicating. The judges acknowledged this problem in hindsight; the competition is expected to be run again in the future with tighter restrictions, as such, the work presented will prove useful once again.
+While no issues with the implementation were observed, it is worthy of noting that for this year the \texttt{DropInBroadcastInfo} structure was considered an \textit{optional} part of the challenge. Reading the broadcast packets showed that at least half of the teams were not sending the same structure, and as such could only be considered to be sending garbage (as there is no way of determining what information they were providing). This resulted in less team-work than expected, as some robots were effectively not communicating. 
+
+\subsection{Future Work}
+
+The lack of standardisation for communication was acknowledged by the judges in hindsight; the competition is expected to be run again in the future with tighter restrictions. As such, there is enough reason for improvements to be made to the system.
+
+Furthermore, it is possible that defining and proposing a communications standard to be used by all teams may be something to look into. Passing the ball between robots is expected to be a major aspect of the competition in the near future and drafting a proposal may give the teams room to add more advanced features, such as robots calling when they are open to accepting a pass, or to where they are passing to.
 
 % TODO: \section{New Competition Behaviours}

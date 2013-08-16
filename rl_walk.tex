@@ -14,7 +14,7 @@ The learned behaviours aimed to react to a greater number of states than hand-pr
 \newpage
 \section{Background \& Related Work}
 
-Reinforcement Learning (RL) is a method of deriving software models for behaviour through machine learning. RL is used to automatically determine a model for actions to be taken given an \textit{environment state} such that the maximum \textit{reward} can be achieved. In the context of stability control for bipedal robots, RL results in a software model (known as a \textit{policy}) which states what motors the robot should actuate and in what manner, given that the robot is in some state (the environment state) and wants to reach some position (the reward).
+Reinforcement Learning (RL) is a method of deriving software models for behaviour through machine learning. RL is used to automatically determine a model for actions to be taken given an \textit{environment state} such that the maximum \textit{reward} can be achieved. In the context of stability control for bipedal robots, RL results in a software model (known as a \textit{policy}) which states what motors the robot should actuate and in what manner, given that the robot is in some state (the environment state) and wants to reach some position (the reward).\cite{rl}
 
 An RL model is defined by:\cite{bernhard_rl}
 
@@ -38,11 +38,11 @@ The work presented in this report relies primarily on the application of RL rese
 \item Rocking between both legs.
 \end{itemize}
 
-Hengst's work allows for a much simpler implementation of the policies in real hardware with less need for learning or tuning on the hardware. Testing this is one of the primary aims of the work outlined in this report.
+Hengst's work allows for a much simpler implementation of the policies in real hardware with less need for manual learning or tuning. Testing this is one of the primary aims of the work outlined in this report.
 
 White's\cite{white} 2011 implementation of a simulator-learned policy for a walking gait on the Naos is also an important motivator. White was able to show that a simulator-learned walk running on the Naos was able to react to obstacles significantly better than one with no RL policy. However, White also found that state measurement was very difficult due to noisy sensors and limited data, and the work was not merged into the competition code.
 
-Further work by Liu\cite{liu} in 2012 focused primarily on improving state measurement by introducing heavy filtering of the Inertial Measurement Unit (IMU) located in the chest of the Naos. While the demonstrated filters worked well, Liu found that the underlying assumptions in the filter (that the robot is standing still, upright, and approximates an inverted pendulum) were not sufficient when introducing more complex motion such as a walking gait.
+Further work by Liu\cite{liu} in 2012 focused primarily on improving state measurement by introducing heavy filtering of the Inertial Measurement Unit (IMU) located in the chest of the Naos. While the demonstrated filters worked well, Liu found that the filtered values were not sufficient when introducing more complex motion such as a walking gait. This was due to the filter's underlying assumptions that the robot was standing still and upright, and approximated an inverted pendulum model.
 
 \newpage
 \section{Theory \& Implementation}
@@ -77,20 +77,20 @@ The goal or reward function of a behaviour is therefore based on getting to some
 \label{fig:policy_diagram}
 \end{figure}
 
-Knowing how the state of the environment changes based on actions is what the transition function defines. The transition function is calculated by observing the change between states of the simulation when subjected to a random choice of actions (from the set of actions that could be taken) -- the random simulation essentially explores the state space of the model through the actions. This is a computing-intensive process (taking upwards of several hours to complete, depending on the desired resolution) but is also practically impossible to define through real-life hardware testing (due to the complexity in analysing the environment, something a simulation can do very easily).
+Knowing how the state of the environment changes based on actions is what the transition function defines. The transition function is calculated by observing the change between states of the simulation when subjected to a random choice of actions (from the set of actions that could be taken) -- the random simulation essentially explores the state space of the model through the actions. This is a computing-intensive process -- taking upwards of several hours to complete depending on the resolution -- but is also practically impossible to define through real-life tests due to the complexity of analysing the environment, something a simulation can do very easily.
 
-Once the state transitions are known (to whatever degree), it is a simple case of calculating the value of each state-action for any given reward function, and then finding the optimal action to take for a given state-action (that is to say, the action to take depends not only on the current state, but also on the previous action taken). The list of optimal actions for each state-action is then known as the \textit{optimal policy}. A reward function can be easily created for any goal desired, such as standing still or walking on the spot, so long as the goal states are in the set of explored states. Knowing the state transitions also allows for quick switching between behaviours by simply picking which policy to follow.
+Once the state transitions are known, it is a simple case of calculating the value of each state-action for any given reward function, and then finding the optimal action to take for a given state-action (that is to say, the action to take depends not only on the current state, but also on the previous action taken). The list of optimal actions for each state-action is then known as the \textit{optimal policy}. A reward function can be easily created for any goal desired, such as standing still or walking on the spot, so long as the goal states are in the set of explored states. Knowing the state transitions also allows for quick switching between behaviours by simply picking which policy to follow.
 
 A total of 7 goal states were defined: 6 in the coronal plane (side-to-side motions), and 1 in the sagittal plane (front-to-back motions). These goals were as follows:
 
 \begin{enumerate}
-\item Standing still
+\item Standing still (sagittal)
+\item Standing still (coronal)
 \item Fast pace rocking between feet
 \item Medium pace rocking between feet
 \item Slow pace rocking between feet
 \item Standing on right leg
 \item Standing on left leg
-\item Sagittal: standing still
 \end{enumerate}
 
 The RL process learns the actions required for optimal stabilisation of these goals, and the result can be used to easily transition between the goals by simply following the policy of a new goal. The optimal policies, which define the action required for each possible state, are then defined. Some simplified example policies can be seen earlier in Figure \ref{fig:policy_diagram}.
@@ -98,7 +98,7 @@ The RL process learns the actions required for optimal stabilisation of these go
 The optimal policies are then given as a simple output of numbers, being the state-action pair and the corresponding optimal action to take. An example output from a control policy can be seen in Figure~\ref{fig:policy}. This is known as a \textit{policy file}, which can then be interpreted by the robot's software.
 
 \begin{figure}[h]
-\newcommand\statehighlight[1]{\textcolor[rgb]{0,1,0}{#1}}
+\newcommand\statehighlight[1]{\textcolor[rgb]{1,0,0}{#1}}
 \newcommand\actionhighlight[1]{\textcolor[rgb]{0,0,1}{#1}}
 \begin{Verbatim}[commandchars=\\\{\},frame=single]
 // Policy table for 6 Coronal behaviours
@@ -116,26 +116,25 @@ The optimal policies are then given as a simple output of numbers, being the sta
 \label{fig:policy}
 \end{figure}
 
-Hengst defines a total of 7 goals, mentioned earlier in this section. These goals and the actions available to the optimal policy calculations are described below:
-
 \subsubsection{Sagittal Goals}
 \label{sec:sagittal}
 
 In the sagittal plane, only one goal is defined: standing still and upright.
 
-As described by Hengst\cite{sagittal}, the goal defined for standing still is to return to a state of $(0,0,2)$. This corresponds to returning to a neutral torso position (with no velocity and at a zero position) and then take no action.
+As described by Hengst\cite{sagittal}, the goal defined for standing still is to return to a neutral torso position (with no velocity and at a zero position) and then take no action.
 
-As a sagittal policy, we are concerned with movement of the torso in the sagittal plane (in other words, leaning forward or back). The possible actions involve actuating the hip and ankle pitch in order to return the leaning torso to the neutral position. The actions are defined very simply as:
+As a sagittal policy, we are concerned with movement of the torso in the sagittal plane (in other words, leaning forward or back). The possible actions involve actuating the hip and ankle pitch in order to return the leaning torso to the neutral position. The motor adjustment is defined very simply as:
 
 \begin{equation} \label{eq:sagittal}
 \delta = 0.01 * (\text{action} - 2)
     \end{equation}
 
-The value of $\delta$ is the \textit{adjustment} in radians added to the hip and ankle pitch angles. We let action be an integer from $0$ to $4$, so that Equation~\ref{eq:sagittal} defines a $\pm0.02$ radians adjustment, $\pm0.01$ radians adjustment, or no adjustment at all (in the case of action $2$) to the motors.
+The value of $\delta$ is the \textit{adjustment} in radians added to the hip and ankle pitch angles. We let \texttt{action} be an integer from $0$ to $4$, so that Equation~\ref{eq:sagittal} defines a $\pm0.02$, $\pm0.01$, or $+0$ radians adjustment to the motors.
 
-On every tick the current state is defined, the next action is looked up from the policy, and the following occurs:
+On every tick, the current state is measured, the next action is looked up from the policy, and the motor angles are adjusted:
 
 \begin{lstlisting}
+float action     = sagittalRL->getAction(0, pos, vel, last_action);
 float adjustment = 0.01 * (action - 2);
 jointAngle[Joint.LAnklePitch.iD()]  += adjustment;
 jointAngle[Joint.RAnklePitch.iD()]  += adjustment;
@@ -148,21 +147,22 @@ jointAngle[Joint.RHipPitch.iD()]    += adjustment;
 
 In the coronal plane, six goals are defined. The policies for these goals are a little more complex than for sagittal, so further information should be sought in the technical documentation provided by Hengst.\cite{coronal}
 
-The coronal goals include: standing still, fast, medium, and slow pace rocks from foot to foot, and standing still on either leg.
+The coronal goals include: standing still; fast, medium, and slow pace rocks from foot to foot; and standing still on either leg.
 
-As some of the goals require a swaying of the robot's hips from side to side to shift the weight between either foot, part of the policy defines a \textit{hip sway} variable as simply a constant multipllied by the current lateral position of the torso.
+As some of the goals require a swaying of the robot's hips from side to side to shift the weight between either foot, part of the policy defines a \textit{hip sway} variable as simply a constant multiplied by the current lateral position of the torso.
 
-For the coronal plane, only side-to-side movement is important, so the actions involve actuating the hip and ankle roll motors. The actions are defined as:
+For the coronal plane, only side-to-side movement is important, so the actions involve actuating the hip and ankle roll motors. The adjustment to the motors is defined as:
 
-\begin{equation} \label{eq:sagittal}
+\begin{equation} \label{eq:coronal}
 \delta = 0.045 * (\text{action} - 1)
 \end{equation}
 
-where $\delta$ is the adjustment in radians, and actions are $0$ to $2$, such that action $1$ means no adjustment.
+where $\delta$ is the adjustment in radians, and actions are $0$ to $2$, such that the possible adjustments are $\pm0.045$ or $+0$ radians.
 
-Again, on every tick the current state is defined, the next action is looked up from the policy, and the behaviour below occurs. It is important to note that some other updates and calculations are also performed depending on which goal is required (for example, lifting up the legs when necessary). Notice that the hip sway adjustment is added to the ankle and hip rolls in opposition to each other.
+Again, on every tick the current state is defined, the next action is looked up from the policy, and the motors are adjusted. It is important to note that some other updates and calculations are also performed depending on which goal is required (for example, lifting up the legs when necessary). Notice that the hip sway adjustment is added to the ankle and hip rolls in opposition to each other, in order to maintain the center of mass over the support foot.
 
 \begin{lstlisting}
+float action      = coronalRL->getAction(goal, pos, vel, last_action);
 float adjustment  = 0.045 * (action - 1);
 float hipSway     = 4 * position;
 jointAngle[Joint.LAnkleRoll.iD()] = -hipSway + adjustment;
@@ -191,13 +191,13 @@ As seen in Figure~\ref{fig:trig}, we can define a simple axis system from the IM
   \caption{State variables}
   \label{fig:triangle}
 \end{subfigure}
-\caption{(a) The definition of the $x$-, $y$-, and $z$-axes from the IMU's accelerometers, and the lean angles from the gyrometers.\\(b) The coronal state variables are the lateral position and velocity along the $y$-axis of the IMU in the torso of the Nao robots. $\theta$ is the coronal roll angle given by the gyrometer.}
+\caption{(a) The definition of the $x$-, $y$-, and $z$-axes from the IMU's accelerometers, and the lean angles from the gyrometers.\\(b) The coronal state variables are the lateral position and velocity along the $y$-axis of the IMU. $\theta$ is the coronal roll angle given by the gyrometer.}
 \label{fig:total}
 \end{figure}
 
-The position and velocity of the IMU is taken with respect to its neutral position, when the robot is standing upright. In this way, it is expected that the coronal (side to side) position of the IMU is exactly centered between the two feet. The two gyrometers provide an angular measurement of the torso, being the angle of lean about the $x$-axis (which we shall call the \textit{coronal roll}) and the lean about the $y$-axis (the \textit{sagittal pitch}), as seen in Figure~\ref{fig:trig}. Note that coronal and sagittal refer to the planes dividing a body into front-back and left-right sides respectively. When standing upright the torso is expected to be at a pitch angle of $0\degree$ relative to the hip pitch (which depends on the way the legs are bent while in a standing position), and a roll angle of $0\degree$.
+The position and velocity of the IMU is taken with respect to its neutral position, when the robot is standing upright. In this way, it is expected that the coronal (side to side) position of the IMU is exactly centered between the two feet. The two gyrometers provide an angular measurement of the torso, being the angle of lean about the $x$-axis (which we shall call the \textit{coronal roll}) and the lean about the $y$-axis (the \textit{sagittal pitch}), as seen in Figure~\ref{fig:trig}. When standing upright the torso is expected to be at a pitch angle of $0\degree$ relative to the hip pitch (which depends on the way the legs are bent while in a standing position), and a roll angle of $0\degree$.
 
-If we assume small perturbations to the torso (in other words, only small pitch and roll angles will be in the state space of the policy), then we can approximate the position of the torso by simply using the gyrometer measurements and the known height of the IMU from the base of the feet. As seen in Figure~\ref{fig:triangle}, which shows a lean in the $x$-axis (or a coronal roll), we can easily calculate the horizontal displacement of the IMU by with: 
+If we assume small perturbations to the torso (in other words, only small pitch and roll angles will be in the state space of the policy), then we can approximate the position of the torso by simply using the gyrometer measurements and the known height of the IMU from the base of the feet. As seen in Figure~\ref{fig:triangle}, which shows a lean in the $x$-axis (or a coronal roll), we can easily calculate the horizontal displacement of the IMU with: 
 
 \begin{equation} \label{eq:height}
 x_t = H * \sin{\theta_t}
@@ -249,7 +249,7 @@ Attempts were made to also measure the state variables through integration of th
 
 \subsection{Generic Policy Interpreter}
 
-As defined in Section~\ref{sec:learning_policies} and seen in Figure~\ref{fig:policy}, the reinforcement-learned control policies are output as a \textit{policy file} of $(\text{state-action}, \text{action})$ tuples. For the sake of generality, we will now refer to these as $(\text{state, action})$ pairs. The policy files are then parsed by the Nao's software during runtime initialisation and used as necessary for making decisions about actions to take. A simple parser and interpreter was used by White for the 2010 RL implementation. The work presented here is an improvement to White's implementation, as well as the application of the improved policies created by Hengst.
+As defined in Section~\ref{sec:learning_policies} and seen in Figure~\ref{fig:policy}, the reinforcement-learned control policies are output as a \textit{policy file} of $(\text{state-action}, \text{action})$ tuples. For the sake of generality, we will now refer to these as $(\text{state, action})$ pairs. The policy files are then parsed by the Nao's software during runtime initialisation and used as necessary for making decisions about actions to take. A simple parser and interpreter was used by White for the 2010 RL implementation.\cite{white} The work presented here is an improvement to White's implementation, as well as the application of the improved policies created by Hengst.
 
 \subsubsection{Generic Policy File}
 
@@ -259,7 +259,7 @@ First, we define a generic policy file format as in Figure~\ref{fig:policy_def}:
 \newcommand\commenthigh[1]{\textcolor[rgb]{0,0.5,0}{#1}}
 \begin{Verbatim}[commandchars=\\\{\},frame=single]
 \commenthigh{// Comments are lines beginning with //}
-\commenthigh{// The first non-comment line is the "resolution"}
+\commenthigh{// The first non-comment line defines the resolution}
    1     0.002   0.01  1
 \commenthigh{// Each subsequent line defines a (state, action)}
 \commenthigh{// goal  pos     vel  last    action}
@@ -276,9 +276,8 @@ First, we define a generic policy file format as in Figure~\ref{fig:policy_def}:
 We define some terms:
 
 \begin{description}
-\item[State] -- A list of values defining a state. For the RL policy files, the state comprises the tuple of (goal, position, velocity, last action taken). These four values are defined as a possible ``state'' of the robot at any given time.
-\item[Action] -- A single value of type \texttt{Action} which defines what action to take. The \textit{Action} type is defined in the codebase, and currently is simply an integer value.
-\item[Comment] -- A line beginning with $//$ which is completely ignored by the parser.
+\item[State] -- A list of values defining a state. For Hengst's RL policy files, we use the tuple of (goal, position, velocity, last action taken) -- these four values are defined as the state of the robot at any given time.
+\item[Action] -- A single value of type \texttt{Action} which defines what action to take. The \texttt{Action} type is defined in the codebase, currently as an \texttt{integer} type.
 \item[Resolution] -- This line contains exactly one number for every state variable. This number defines the exact distance between states for the respective state variable. In the example above, the third state variable (velocity) can only differ in steps of size $0.01$ exactly. Thus, $-0.40$ and $-0.39$ are valid velocity states, but $-0.395$ is not.
 \end{description}
 
