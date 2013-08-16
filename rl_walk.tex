@@ -14,7 +14,7 @@ The learned behaviours aimed to react to a greater number of states than hand-pr
 \newpage
 \section{Background \& Related Work}
 
-Reinforcement Learning (RL) is a method of deriving software models for behaviour through machine learning. RL is used to automatically determine a model for actions to be taken given an \textit{environment state} such that the maximum \textit{reward} can be achieved. In the context of stability control for bipedal robots, RL results in a software model (known as a \textit{policy}) which states what motors the robot should actuate and in what manner, given that the robot is in some state (the environment state) and wants to reach some position (the reward).\cite{rl}
+Reinforcement Learning (RL) is a method of deriving software models for behaviour through machine learning. RL is used to automatically determine a model for actions to be taken given an \textit{environment state} such that a \textit{reward} is given. The sum of future rewards is the \textit{value} of the action in a given state. In the context of stability control for bipedal robots, RL results in a software model known as a \textit{policy}. The policy states how the robot should actuate its motors given that it is in some environent state, wants to reach some position (defined by the reward function), and wants to do so optimally (by maximising value).
 
 An RL model is defined by:\cite{bernhard_rl}
 
@@ -25,12 +25,9 @@ An RL model is defined by:\cite{bernhard_rl}
 \item[Reward] -- the definition of how good being in a certain state or doing a certain action is.
 \end{description}
 
-%The Q-learning -> learns to assign values to (s,a) pairs.
-%Given a particular action in a particular state, followed by actions which follow a particular policy, the agent will receive a particular set of reinforcement.
+RL works by finding a function for the \textit{value} of taking a particular action when in a particular state and following the optimal policy thereafter. The optimal value is therefore the beset one of the possible actions that can be taken in a given state. The value of each state-action is dependent on the reward -- taking actions which lead to rewards quickly is of higher value, taking actions which lead to slow or negative rewards is of lower value.
 
-RL works by finding a function which gives the value of taking a particular action when in a particular state and then following the optimal policy thereafter. The optimal value is therefore the best one of the possible actions that can be taken at a given state. The \textit{value} of each state-action is dependent on the reward -- taking actions which lead to rewards quickly is of higher value, taking actions which lead to slow or negative rewards is of lower value.
-
-The work presented in this report relies primarily on the application of RL research done by Hengst\cite{bernhard_rl}. Hengst's work involved the use of a simulated environment for the robot, allowing for fast reinforcement learning of optimal policies for various behaviours (defined by their cost (inverse of reward) functions), including:
+The work presented in this report relies primarily on the application of RL research done by Hengst\cite{bernhard_rl}. Hengst's work involved the use of a simulated environment for the robot, allowing for fast reinforcement learning of optimal policies for various behaviours (defined by their reward functions), including:
 
 \begin{itemize}
 \item Standing upright and still.
@@ -249,7 +246,7 @@ Attempts were made to also measure the state variables through integration of th
 
 \subsection{Generic Policy Interpreter}
 
-As defined in Section~\ref{sec:learning_policies} and seen in Figure~\ref{fig:policy}, the reinforcement-learned control policies are output as a \textit{policy file} of $(\text{state-action}, \text{action})$ tuples. For the sake of generality, we will now refer to these as $(\text{state, action})$ pairs. The policy files are then parsed by the Nao's software during runtime initialisation and used as necessary for making decisions about actions to take. A simple parser and interpreter was used by White for the 2010 RL implementation.\cite{white} The work presented here is an improvement to White's implementation, as well as the application of the improved policies created by Hengst.
+As defined in Section~\ref{sec:learning_policies} and seen in Figure~\ref{fig:policy}, the reinforcement-learned control policies are output as a \textit{policy file} of $(\text{state-action}, \text{action})$ tuples. For the sake of generality, we will now refer to these as $(\text{state, action})$ pairs. The policy files are then parsed by the Nao's software during runtime initialisation and used as necessary for making decisions about actions to take. A simple parser and interpreter was used by White for the 2010 RL implementation.\cite{white} The work presented here is a redesign of White's \texttt{RLPlanner}, as well as the application of the improved policies created by Hengst.
 
 \subsubsection{Generic Policy File}
 
@@ -308,8 +305,14 @@ A motion generator may use a policy file by creating an instance of the \texttt{
 
 A motion generator, such as \texttt{StandGenerator} (which defines the behaviour for standing upright and still), simply creates an instance of \texttt{RLPlanner} for each required policy file, then on every tick looks up an action to perform, and then performs it. The actions performed are those defined in Sections~\ref{sec:sagittal}~and~\ref{sec:coronal}.
 
+Initialising a new policy simply requires:
+
+\begin{lstlisting}
+RLPlanner *coronal = (RLPlanner*)(new RLPlanner("/path/to/policy.rl"));
+\end{lstlisting}
+
 \newpage
-\section{Results}
+\section{Results \& Evaluation}
 \label{sec:rl_results}
 Several policies were tested through the \texttt{StandGenerator} with mixed success. The sagittal standing still controller proved to be most successful and is described in more detail below. The similar coronal controller resulted in random oscillations of the robot due to the extra hip sway. These random oscillations sometimes diverged and quickly destabilised the robot, even with extremely heavy filtering of the gyrometer measurements. Due to a lack of reasonable results, the goals of rocking from foot to foot were not attempted.
 
@@ -357,9 +360,17 @@ It is possible that simpler state measurement, such as tried in the work present
 
 It is quite likely that relying on the angle measurement of the torso for coronal policies is not suffcient. A potential theory for this may be the opposing forces of the hip sway on the ankle and hip joints acting to restore the torso to a zero angle but leaving the torso in a laterally displaced location. However, as the position state variable is calculated only based on torso angle, it's possible that the robot would assume it to be back in a neutral position in this case. Further investigation is required.
 
-Further improvements can also be made to the generic policy file interpreter. Most importantly, sharing a single policy file between multiple generators is a function that should be added, as currently the system may read and store in memory the same policy file multiple times if called by multiple motion generators. No memory or performance issues were found during testing, but it is possible that large C++ maps may not be the most efficient structure for storage, and this should be further investigated if deemed necessary.
+Further improvements can also be made to the generic policy file interpreter. Most importantly, sharing a single policy file between multiple generators is a function that should be added, as currently the system may read and store in memory the same policy file multiple times if called by multiple motion generators. No memory or performance issues were found during testing, but it is possible that large \verb!C++! maps may not be the most efficient structure for storage, and this should be further investigated if deemed necessary.
 
-\section{Conclusions}
-The work presented proves that control policies learned on simulations of the robots can be successfully used to perform self-stabilisation on the robots. This proves that the theory is sound and applicable to real-life hardware, and eventually applicable to more stable bipedal behaviours. A generic policy file format has been defined and an improved policy interpreter written. Both tools can be further improved for use in future exploration of RL applications.
+\section{Conclusion}
+The overall contributions of the author are as follows:
+\begin{itemize}
+\item The implementation of a generic RL Policy Interpreter with the use of generic policy files for future use in RL applications.
+\item The identification of areas where significant future work must be done for successful application of RL work.
+\item A self-stabilising upright stand as a proof of concept of Hengst's RL work being applicable to the Naos.
+\item A $3^{rd}$ place entry in the SPL Open Challenge of Robocup 2013.
+\end{itemize}
 
-Major failure points have been identified in state measurement. If the work presented here is to be expanded on, more must be done on improving the accuracy of measuring the robot's current position and velocity.
+The work presented proves that control policies learned on simulations of the robots can be successfully used to perform self-stabilisation on the robots. This proves that the theory is sound and applicable to real-life hardware, and eventually applicable to more stable bipedal behaviours. A generic policy file format has been defined and an improved policy interpreter written -- both tools can be further improved for use in future exploration of RL applications.
+
+Major failure points have been identified in state measurement. If the work presented here is to be expanded on, more must be done on improving the accuracy of measuring the robot's current position and velocity, or some other way of defining the robot's state must be found.
