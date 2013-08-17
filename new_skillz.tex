@@ -18,7 +18,7 @@ Instead, the behaviours framework defines how a robot decides whether to go for 
 
 The \textit{NewSkillz} framework differs from the 2012 skills framework in that it is not programmed explicitly as state-machines. Instead, the states arise from inherent properties of the framework while still being as simple to reason about. State is chosen through a tree-like structure of skills where each skill decides whether to \textit{delegate} its decision to another skill, or to perform some action in a \textit{tick}.
 
-The skill tree can therefore be thought as a form of decision tree or state-machine. Each node in the tree is expected to delegate a decision down to a node below it. Leaf nodes -- those which do not wish to delegate -- are required to therefore perform some sort of action in the real world, such as kick the ball.
+The skill tree can therefore be thought as a form of decision tree or state-machine. Each skill in the tree is expected to delegate a decision down to a skill below it. Leaf skills -- those which do not need to delegate -- are required to perform some sort of action in the real world, such as kick the ball.
 
 To better illustrate this concept, the skill tree for the proof-of-concept port of the 2012 skills is shown in Figure~\ref{fig:skill_tree}.
 
@@ -155,14 +155,18 @@ Under ``Emergency mode'', the robot stops all movement, flashes all its LEDs in 
 
 Also, thanks to the live-reload functionality built into \texttt{cpp\_glue}, new skills can be pushed to the robot or even edited directly on the robot. Once a \verb!Python! file is modified on the robot, \textit{NewSkillz} reloads all skills and the robot continues from whatever state it was in (as the \texttt{Blackboard} state is preserved).
 
-\section{Results \& Evaluation}
-
-A major advantage resulting from the \textit{NewSkillz} framework is the significant cut down in redundant code due to the abstraction of the \texttt{Blackboard} into the \texttt{IRL} API. By design, all skills have access to the \texttt{IRL}, and therefore to the \texttt{Blackboard} -- which needed to be passed around to everything in the 2012 framework. The standard \texttt{Skill} class also helps to abstract state transitions away, leaving much cleaner code.
-
 \section{Future Work}
 
-% TODO Tick locking
-% TODO ncurses
-% TODO Port the 2013 competition code
+Further work needs to be done on the \textit{NewSkillz} framework. However, the architecture is in place and the design works well both for writing skills and for implementation within a simulator. Future work should look at improving the design where necessary.
+
+Some possible improvements include:
+\begin{itemize}
+\item Implement a method of locking state to a specific leaf skill. When, for example, the robot decides to kick by calling a \texttt{KickBall} leaf skill, the framework should not switch to another leaf skill until the action is completely done. As safeguards are already in place in the underlying \verb!C++! code (no further actions can be performed until a kick is finished), this has yet to be an issue, but it may be in future.
+\item A graphical interface, most probably with an \texttt{ncurses} library, for dynamically displaying the skill tree while the skills are running. This could show the current decision path taken through the skill tree at any given moment, giving an easy way to diagnose bugs.
+\end{itemize}
+
+Currently only a semi-working port of the 2012 skills framework exists which runs on the robots. Any further work on rUNSWift behaviours should focus primarily on continuing the porting of the older skills framework which provide advanced competition-ready behaviour. It is also worth noting that the 2012 skills were improved during 2013, so the port should focus on the latest.
 
 \section{Conclusion}
+
+A major advantage resulting from the \textit{NewSkillz} framework is the significant cut down in redundant code due to the \texttt{IRL} abstraction. By design, all skills have access to the \texttt{IRL}, and therefore to the \texttt{Blackboard} -- which needed to be passed around to everything in the 2012 framework. The standard \texttt{Skill} class also helps to abstract state transitions away, allowing for a simpler skill tree while retaining the flexibility of state transitions.
