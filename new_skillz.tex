@@ -24,10 +24,14 @@ To better illustrate this concept, the skill tree for the proof-of-concept port 
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=0.8\textwidth]{img/skill_tree.png}
-\caption{Tree of the proof-of-concept port of the 2012 skills. Skills in bright green are leaf nodes (which must perform some action). Skills in dark green are un-expanded nodes (i.e. they delegate to too many other nodes to fit in the diagram). An arrow from a skill represents a delegation to another skill.}
+\includegraphics[width=0.9\textwidth]{img/skill_tree.png}
+\caption{Tree of the proof-of-concept port of the 2012 skills. Skills in bright green are leaf nodes (which must perform some action). Skills in dark green are un-expanded nodes (i.e. the skills they delegate to are not shown). An arrow from a skill represents a delegation to another skill.}
 \label{fig:skill_tree}
 \end{figure}
+
+Notice that the tree contains two root nodes, being \texttt{TopLevelSkill} and \texttt{TopLevelHeadSkill}. This allows for decisions to be made for the body and head separately.
+
+The skill tree system provides cleaner and less redundant code through the delegation mechanism. It is easy to imagine this by taking the state machine of the head as an example.
 
 \section{Implementation}
 
@@ -43,7 +47,7 @@ The \verb!Python! entry-point is located in
 
 \texttt{runswift/image/home/nao/data/behaviours/cpp\_glue.py}
 
-On every tick, \texttt{cpp\_glue} ticks both the \texttt{TopLevelSkill} and \texttt{TopLevelHeadSkill} (allowing for separate decisions to be made by the head and the body).
+On every tick, \texttt{cpp\_glue} ticks both the \texttt{TopLevelSkill} and \texttt{TopLevelHeadSkill}. Because the body's \texttt{TopLevelSkill} is ticked \textit{after} the head, any skills in the body skill tree can choose to delegate to a skill in the head tree and thus \textbf{override} the head tree's actions.
 
 \subsection{In Real Life (IRL)}
 
@@ -69,6 +73,8 @@ All \verb!Python! runtime exceptions and errors are caught by \texttt{cpp\_glue}
 
 Under ``Emergency mode'', the robot stops all movement, flashes all its LEDs in random colours, and audibly requests to be picked up (for use in the competition). The stack trace produced by \verb!Python! is able to show the faulting skill as well as its parent skill (which delegated to it), but no further up the line. If a bigger stack trace is required, simply print out the skill name in the \texttt{tick} function of \texttt{Skill}.
 
+Also, thanks to the live-reload functionality built into \texttt{cpp\_glue}, new skills can be pushed to the robot or even edited directly on the robot. Once a \verb!Python! file is modified on the robot, \textit{NewSkillz} reloads all skills and the robot continues from whatever state it was in (as the \texttt{Blackboard} maintains state which the \texttt{IRL} accesses).
+
 \section{Results \& Evaluation}
 
 A major advantage resulting from the \textit{NewSkillz} framework is the significant cut down in redundant code due to the abstraction of the \texttt{Blackboard} into the \texttt{IRL} API. By design, all skills have access to the \texttt{IRL}, and therefore to the \texttt{Blackboard} -- which needed to be passed around to everything in the 2012 framework. The standard \texttt{Skill} class also helps to abstract state transitions away, leaving much cleaner code.
@@ -80,37 +86,3 @@ A major advantage resulting from the \textit{NewSkillz} framework is the signifi
 % TODO Port the 2013 competition code
 
 \section{Conclusion}
-
-
-
-
-
-We determined that a codebase restructure would be more economical than trying to adjust the current system; the existing codebase was plagued with magic numbers, idiosyncratic hard-coded edge cases and code segments leftover from previously discarded strategies, as well as lacking comments and documentation.
-5.2 Goals
-Through restructuring the aim was to create a clean and well-documented codebase that would reduce confusion for future rUNSWift teams, and enable faster debugging at competition.
-
-The restructure served the dual purpose of introducing the API structure necessary for the simulator and reshaping the design from a non-hierarchical [IS IT?] state machine with no knowledge of its predecessor state to a more intuitive and documentable tree-like structure.
-5.3 In Real Life (IRL) API
-The API enables easy re-implementation of functions that interact with the hardware through the blackboard; a requirement for implementing the simulatorâs âhardwareâ, and a simple way to reduce duplicated functions and abstract confusing naming conventions (e.g. blackboard.localisation.robotObstacles.rr) out of the skills code.
-Figure [x.y] The separate streams of the IRL API
-
-5.4 Skills Delegation Tree
-
-Within the skills hierarchy there are two types of divisions; 
-
-âPublicâ vs âPrivate
-âPublicâ classes are referenced both within the file and outside, these are indicated with a name corresponding to the filename
-âPrivateâ classes are referenced only by other classes within its file
-Internal vs Leaf nodes
-Internal nodes are indicated with a âdelegateâ function, called each clock tick. These are calculating functions that do not affect the actuators.
-Leaf nodes are indicated with a âtickâ function, called each clock tick. These skills typically involve an âaction commandâ that affects the robotâs actuators (e.g. self.irl.action.walk()).
-
-Every skill in the path from root node to current-state node is accessed each clock tick, starting from the root node down. The âdelegateâ functions are called on each, allowing changes in the path to be made at any level. The bottom node in the path will eventually be a leaf node, and its âtickâ function will be accessed rather than its (non-existent) âdelegateâ.
-
-
-Figure [x.y] An overview of the Skills Delegation Tree
-
-5.6 Future Work
-The founding structure for the architecture is in place, with simple and clean skills. More testing is necessary to further build up the complexity of the skills and improve the level of play - an ideal project would be devising a roles template for different actions to be learnt with the simulator. 
-The other direction for work in this area is continuing to clean up the codebase; devising elegant ways to reduce redundancy and increase how intuitive it is to come into.
-
