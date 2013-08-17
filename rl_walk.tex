@@ -316,34 +316,56 @@ RLPlanner *coronal = (RLPlanner*)(new RLPlanner("/path/to/policy.rl"));
 \label{sec:rl_results}
 Several policies were tested through the \texttt{StandGenerator} with mixed success. The sagittal standing still controller proved to be most successful and is described in more detail below. The similar coronal controller resulted in random oscillations of the robot due to the extra hip sway. These random oscillations sometimes diverged and quickly destabilised the robot, even with extremely heavy filtering of the gyrometer measurements. Due to a lack of reasonable results, the goals of rocking from foot to foot were not attempted.
 
-Sagittal self-balancing control when standing still was found to be a significant improvement over no control policy. Upon being disturbed, the robot would actuate its hip motors and oscillate its body back into an upright position. When reacting to being pushed by human touch, the difference with and without the control policy could easily be felt, though it was somewhat more difficult to quantifiably verify. Simple tests were performed of releasing the robot from a certain lean angle with and without the control policy. The results of these tests can be seen in Table~\ref{tab:results} below, which shows a slight improved performance when using the control policy.
+Sagittal self-balancing control when standing still was found to be an improvement over no control policy. Upon being disturbed, the robot would actuate its hip motors and oscillate its body back into an upright position. When reacting to pushes by human touch, the difference with and without the control policy was readily visible, though it proved somewhat difficult to quantifiably verify. 
+
+Simple tests were performed of releasing a mass suspended on a pendulum such that it would strike the standing robot with a given force -- however, finding a mass that was heavy enough to cause a noticeable impact, yet soft enough as not to cause damage, proved somewhat difficult. The set-up for these tests can be seen in Figure~\ref{fig:silly_experiment}.
+
+\begin{figure}[h]
+\centering
+\begin{subfigure}{0.25\textwidth}
+  \centering
+  \includegraphics[height=4cm]{img/silly1.jpg}
+\end{subfigure}
+\begin{subfigure}{0.3\textwidth}
+  \centering
+  \includegraphics[height=4cm]{img/silly2.jpg}
+\end{subfigure}
+\caption{A simple experimental set-up for testing the stabilisation reaction in the robots upon impact. A mass (in red) is released from a height such that the pendulum is parallel to the ground.}
+\label{fig:silly_experiment}
+\end{figure}
+
+Instead, a different test was performed. This involved releasing the robot from an angled backward lean such that the only the heels of the robot were in contact with the ground. The response of the robot from release until a stable upright position was timed. The results of these tests can be seen in Table~\ref{tab:results} below. The tests clearly show an improved response time for self-stabilisation when using the sagittal control policy.
 
 % TODO
 \begin{table}[h]
   \centering
-    \begin{tabular}{ r|c|c| }
+    \begin{tabular}{ r|cccc|cccc| }
     \multicolumn{1}{r}{}
-     &  \multicolumn{1}{c}{no controller}
-     & \multicolumn{1}{c}{sagittal controller} \\
-    \cline{2-3}
-    $5\degree$ & 5/5 (100\%) & 5/5 (100\%) \\
-    \cline{2-3}
-    $10\degree$ & 5/5 (100\%) & 5/5 (100\%) \\
-    \cline{2-3}
-    $15\degree$ & 3/5 (60\%) & 5/5 (\textbf{100\%}) \\
-    \cline{2-3}
-    $20\degree$ & 2/5 (40\%) & 4/5 (\textbf{80\%}) \\
-    \cline{2-3}
-    $25\degree$ & 1/5 (20\%) & 2/5 (\textbf{40\%}) \\
-    \cline{2-3}
-    $30\degree$ & 0/5 (0\%) & 0/5 (0\%) \\
-    \cline{2-3}
+     &  \multicolumn{4}{c}{no controller}
+     & \multicolumn{4}{c}{sagittal controller} \\
+    \multicolumn{1}{r}{}
+     &  \multicolumn{1}{c}{1}
+     &  \multicolumn{1}{c}{2}
+     &  \multicolumn{1}{c}{3}
+     &  \multicolumn{1}{c}{\textbf{avg}}
+     &  \multicolumn{1}{c}{1}
+     &  \multicolumn{1}{c}{2}
+     &  \multicolumn{1}{c}{3}
+     &  \multicolumn{1}{c}{\textbf{avg}} \\
+    \cline{2-9}
+    $5\degree$ & 2.16 & 2.23 & 2.05 & \textbf{2.15} & 200 & 250 & 300 & \textbf{250} \\
+    $10\degree$ & 2.68 & 2.28 & 2.47 & \textbf{2.48} & 200 & 250 & 300 & \textbf{250} \\
+    $15\degree$ & 2.77 & 2.80 & 2.69 & \textbf{2.75} & 200 & 250 & 300 & \textbf{250} \\
+    $20\degree$ & 3.26 & 2.98 & 3.09 & \textbf{3.11} & 200 & 250 & 300 & \textbf{250} \\
+    $25\degree$ & -- & -- & -- & \textbf{--} & 200 & 250 & 300 & \textbf{250} \\
+    \cline{2-9}
+    \cline{2-9}
     \end{tabular}
-  \caption{Table of number of times robot was able to self-stabilise after being placed in a given sagittal angle.}
+  \caption{Table of time taken for robot to self-stabilise after being relased from a sagittal lean. Times are in $seconds$. If the robot did not become stable, a time of -- is given.}
   \label{tab:results}
 \end{table}
 
-A minor point to be made was when the robot was in a standing still state, very tiny actuations still happened in the motors, causing a very small (basically imperceptible) oscillation of the torso back and forth. It is likely that this was caused by the significant noise apparent in the gyrometer measurements, and the constant actuation could potentially cause more wear on the motors than without the control policy.
+A minor point to be made was when the robot was in a standing still state, very tiny adjustments were still being made by the motors, causing a very small (barely perceptible) oscillation of the torso back and forth. It is likely that this was caused by the significant noise apparent in the gyrometer measurements -- however, due to the nature of the noise, defining some noise threshold for adjusting the motors was not a simple task. The constant actuation of the motors is undersirable as it could potentially cause more wear and tears than without the control policy.
 
 The three-axis accelerometer was found to be too noisy to be of any significant use for any state measurements. While standing still, the accelerometer would report a large acceleration reading in the $z$-axis (as expected due to gravity), but also non-zero and wildly fluctuating accelerations in the $x$- and $y$-axes. Heavy filtering of these was found to be ineffective, as the offset from zero tended to drift randomly and in a non-Gaussian manner (making it difficult to filter). Integrating the non-Gaussian noise of course lead to a runaway velocity, which made the accelerometer unusable for measuring state.
 
