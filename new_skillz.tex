@@ -145,21 +145,25 @@ An example works as such: if a robot is located at a $robot\_pos = Point(x, y)$,
 
 Here, the $\gg$ (right-shift) operator returns the vector from $robot\_pos$ to $ball\_pos$. This vector is then rotated such that the $robot\_facing$ vector becomes the $x-$axis. This gives the vector to the ball relative to the robot's facing direction. Finally, one can extract the angle which the robot needs to rotate to in order to face the ball.
 
+Alternatively, and even more succinctly:
+
+\begin{equation}
+robot\_facing.angle\_to(robot\_pos \gg ball\_pos)
+\end{equation}
+
 The geometry library thus allows for much simpler calculations to be made for many vector operations.
 
 \subsection{Debugging} 
 
 All \verb!Python! runtime exceptions and errors are caught by \texttt{cpp\_glue}. \texttt{cpp\_glue} keeps watch on the skill-tree in order to print debug information about it, and catches all \verb!Python! exceptions in order to place the robot into ``Emergency mode''.
 
-Under ``Emergency mode'', the robot stops all movement, flashes all its LEDs in random colours, and audibly requests to be picked up (for use in the competition). The stack trace produced by \verb!Python! is able to show the faulting skill as well as its parent skill (which delegated to it), but no further up the line. If a bigger stack trace is required, simply print out the skill name in the \texttt{tick} function of \texttt{Skill}.
+Under ``Emergency mode'', the robot stops all movement, flashes all its LEDs in random colours, and audibly requests to be picked up. The stack trace produced by \verb!Python! shows the faulting skill as well as its parent skill, but no further back. If a bigger stack trace is required, simply print out the skill name in the \texttt{tick} function of \texttt{Skill}.
 
-Also, thanks to the live-reload functionality built into \texttt{cpp\_glue}, new skills can be pushed to the robot or even edited directly on the robot. Once a \verb!Python! file is modified on the robot, \textit{NewSkillz} reloads all skills and the robot continues from whatever state it was in (as the \texttt{Blackboard} state is preserved).
+Thanks to the live-reload functionality built into \texttt{cpp\_glue}, new skills can be pushed to the robot while in ``Emergency mode''. Once a \verb!Python! file is modified on the robot, \textit{NewSkillz} reloads all skills and the robot continues from whatever state it was in (as the \texttt{Blackboard} state is preserved).
 
 \section{Future Work}
 
-Further work needs to be done on the \textit{NewSkillz} framework. However, the architecture is in place and the design works well both for writing skills and for implementation within a simulator. Future work should look at improving the design where necessary.
-
-Some possible improvements include:
+Further work needs to be done on the \textit{NewSkillz} framework. The architecture is in place and the design works well both for writing skills and for implementation within a simulator, so future work should look at improving the design where necessary. Some possible improvements include:
 \begin{itemize}
 \item Implement a method of locking state to a specific leaf skill. When, for example, the robot decides to kick by calling a \texttt{KickBall} leaf skill, the framework should not switch to another leaf skill until the action is completely done. As safeguards are already in place in the underlying \verb!C++! code (no further actions can be performed until a kick is finished), this has yet to be an issue, but it may be in future.
 \item A graphical interface, most probably with an \texttt{ncurses} library, for dynamically displaying the skill tree while the skills are running. This could show the current decision path taken through the skill tree at any given moment, giving an easy way to diagnose bugs.
@@ -170,3 +174,5 @@ Currently only a semi-working port of the 2012 skills framework exists which run
 \section{Conclusion}
 
 A major advantage resulting from the \textit{NewSkillz} framework is the significant cut down in redundant code due to the \texttt{IRL} abstraction. By design, all skills have access to the \texttt{IRL}, and therefore to the \texttt{Blackboard} -- which needed to be passed around to everything in the 2012 framework. The standard \texttt{Skill} class also helps to abstract state transitions away, allowing for a simpler skill tree while retaining the flexibility of state transitions.
+
+The \textit{NewSkillz} framework therefore allows for simple implementation both on hardware and in a simulator. Future work on rUNSWift should ensure that the behaviours are written to a competition-ready state. The framework allows for more readable and easier to understand code, which should help significantly ease the pain of rapid development and debugging during the Robocup competition.
