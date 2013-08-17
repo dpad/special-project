@@ -25,7 +25,7 @@ To better illustrate this concept, the skill tree for the proof-of-concept port 
 \begin{figure}[h]
 \centering
 \includegraphics[width=0.9\textwidth]{img/skill_tree.png}
-\caption{Tree of the proof-of-concept port of the 2012 skills. Skills in bright green are leaf nodes (which must perform some action). Skills in dark green are un-expanded nodes (i.e. the skills they delegate to are not shown). An arrow from a skill represents a delegation to another skill.}
+\caption{Tree of the proof-of-concept port of the 2012 skills. Skills in bright green are leaf skills (which must perform some action). Skills in dark green are un-expanded nodes (i.e. the skills they delegate to are not shown). An arrow from a skill represents a delegation to another skill.}
 \label{fig:skill_tree}
 \end{figure}
 
@@ -116,7 +116,36 @@ Good design is to have very atomic leaf skills that perform a single action, per
 \subsubsection{Delegate}
 \label{sec:delegate}
 
+The \texttt{delegate} function is defined only for skills which expect to delegate to another skill to perform some action. These skills perform all the logical decisions about states.
+
+Good design should ensure that skills cannot possibly delegate in a cyclic manner (i.e. traversing the skills tree should guarantee arrival at a leaf skill).
+
 \subsection{Geometry}
+
+A simple geometry library is implemented which defines some \texttt{Vector}-like objects and all associated functions.
+
+The geometry library is in \texttt{runswift/image/home/nao/data/behaviours/geometry.py}
+
+There is one primitive class defined in geometry known as a \texttt{Point}. A \texttt{Point} simply represents an $(x, y)$ tuple. Three subclasses are defined: \texttt{Vector}, \texttt{UnitVector}, and \texttt{DirectionVector}. All of these perform in exactly the same way, and differ only by their initialisations:
+
+\begin{description}
+\item[Point] takes an $x$ and $y$ coordinate.
+\item[Vector] takes a length and a direction in radians.
+\item[UnitVector] takes a direction in radians and becomes a vector of length $1$.
+\item[DirectionVector] takes a direction in either degrees or radians and becomes a unit vector.
+\end{description}
+
+These geometry classes should be used for any representations of points on the field, direction facing, point to walk to, relative distances, and so on. The \texttt{Point} superclass defines many useful vector functions, including rotations, lengths, subtractions, etc.
+
+An example works as such: if a robot is located at a $robot\_pos = Point(x, y)$, is facing in the $robot\_facing = DirectionVector(45\degree)$, and wants to turn towards the ball at $ball\_pos = Point(x, y)$, then the amount the robot needs to turn is given by the angle:
+
+\begin{equation}
+(robot\_pos \gg ball\_pos).rotate(robot\_facing).angle()
+\end{equation}
+
+Here, the $\gg$ (right-shift) operator returns the vector from $robot\_pos$ to $ball\_pos$. This vector is then rotated such that the $robot\_facing$ vector becomes the $x-$axis. This gives the vector to the ball relative to the robot's facing direction. Finally, one can extract the angle which the robot needs to rotate to in order to face the ball.
+
+The geometry library thus allows for much simpler calculations to be made for many vector operations.
 
 \subsection{Debugging} 
 
