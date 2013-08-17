@@ -1,11 +1,11 @@
 \chapter{Drop-In Player Challenge}
 \label{chap:misc}
 
-\section{Drop-In Player Challenge}
+\section{Introduction}
 
 One of the challenges in the 2013 SPL competition was the Drop-In Player Challenge, which required robots to communicate and cooperate on teams comprising robots from other teams. This work expands on rUNSWift's existing modular framework as defined by the 2010 design\cite{runswift_2010}.
 
-\subsection{Implementation}
+\section{Implementation}
 
 The challenge expected robots to communicate using a common $C$ structure, sent as a single network packet and broadcast to the entire team on a specific port. The necessary broadcast structure, seen below, was extremely close to the one already existing for robot communication by the 2010 design. 
 
@@ -37,13 +37,13 @@ New variables required, such as ball velocity, were easy to implement as they we
 
 One can easily switch between the DropIn and normal Receiver/Transmitter modules by setting the configuration option \texttt{game.type} to \texttt{DROP\_IN}.
 
-\subsection{Results \& Evaluation}
+\section{Results \& Evaluation}
 
 As expected, rUNSWift's robots reacted as if they were playing on teams with their own robots. They demonstrated team work with the other robots by switching roles depending on their team-mates' positions. The behaviour was enough to give rUNSWift a $3^{rd}$ place overall in the challenge.
 
 While no issues with the implementation were observed, it is worthy of noting that for this year the \texttt{DropInBroadcastInfo} structure was considered an \textit{optional} part of the challenge. Reading the broadcast packets showed that at least half of the teams were not sending the same structure, and as such could only be considered to be sending garbage (as there is no way of determining what information they were providing). This resulted in less team-work than expected, as some robots were effectively not communicating. 
 
-\subsection{Future Work}
+\section{Future Work}
 
 The lack of standardisation for communication was acknowledged by the judges in hindsight; the competition is expected to be run again in the future with tighter restrictions. As such, there is enough reason for improvements to be made to the system.
 

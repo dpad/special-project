@@ -139,13 +139,15 @@ The report describes 2013's Open Challenge entry, which applied Reinforcement-Le
 
 Further information on the new behaviours framework for the robots, known as NewSkillz, is also provided. The framework makes writing robot behaviours a much simpler process by abstracting away much of the complexity and redundancy involved in state changes, and its consistent API allows for the easy implementation of a behaviours simulator. A port of 2012's behaviours is demonstrated to work on both the robots and in the simulator with no changes necessary between them.
 
+Finally, the 2013 Drop-In Player Challenge is described and rUNSWift's implementation 
+
 \end{abstract}
 
 % ---------------------------------------------
 % Table of contents
 % ---------------------------------------------
 \newpage
-\setcounter{tocdepth}{2} % 1 for less content, 3 for more.
+\setcounter{tocdepth}{1} % 1 for less content, 3 for more.
 \tableofcontents
 \newpage
 \pagenumbering{arabic}
@@ -157,16 +159,18 @@ Further information on the new behaviours framework for the robots, known as New
 \chapter{Outline}
 Due to the varied work done for rUNSWift in 2013, this report is split into several different projects, as seen below.
 
-\section{Reinforcement-Learned Stabilisation}
+\section*{Reinforcement-Learned Stabilisation}
 This section describes rUNSWift's entry to the 2013 Standard Platform League (SPL) Open Challenge. This involved demonstrating the application of Reinforcement-Learned bipedal control policies on the Nao robots.
 
 A simple introduction to Reinforcement Learning is given, demonstrating the lead-up work done for the Open Challenge entry by researcher Bernhard Hengst.\cite{bernhard_rl} Further state measurement work by Roger Liu is also discussed.\cite{liu} Finally, the implementation of control policies, in a redesign of the work done by Brock White, is described.\cite{white} This defines a generic way to interpret Reinforcement-Learned control policies on the Nao hardware.
 
 Some simple tests allow a proof-of-concept to be demonstrated, and focus points for future research are described.
 
-\section{NewSkillz Behaviour Framework}
+\section*{NewSkillz Behaviour Framework}
 
-\section{Drop-In Player Challenge}
+This section describes the new
+
+\section*{Drop-In Player Challenge}
 
 \input{rl_walk}
 \input{new_skillz}

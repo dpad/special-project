@@ -312,9 +312,9 @@ RLPlanner *coronal = (RLPlanner*)(new RLPlanner("/path/to/policy.rl"));
 \end{lstlisting}
 
 \newpage
-\section{Results \& Evaluation}
+\section{Results}
 \label{sec:rl_results}
-Several policies were tested through the \texttt{StandGenerator} with mixed success. The sagittal standing still controller proved to be most successful and is described in more detail below. The similar coronal controller resulted in random oscillations of the robot due to the extra hip sway. These random oscillations sometimes diverged and quickly destabilised the robot, even with extremely heavy filtering of the gyrometer measurements. Due to a lack of reasonable results, the goals of rocking from foot to foot were not attempted.
+Several policies were tested through the \texttt{StandGenerator} with mixed success. The sagittal standing still controller proved to be most successful and is described in more detail below. The similar coronal controller resulted in random oscillations of the robot due to the extra hip sway. These random oscillations sometimes diverged and quickly destabilised the robot, even with extremely heavy filtering of the gyrometer measurements. Due to a lack of reasonable results with the coronal policies, the goals of rocking from foot to foot were not tested at all.
 
 Sagittal self-balancing control when standing still was found to be an improvement over no control policy. Upon being disturbed, the robot would actuate its hip motors and oscillate its body back into an upright position. When reacting to pushes by human touch, the difference with and without the control policy was readily visible, though it proved somewhat difficult to quantifiably verify. 
 
@@ -330,7 +330,7 @@ Simple tests were performed of releasing a mass suspended on a pendulum such tha
   \centering
   \includegraphics[height=4cm]{img/silly2.jpg}
 \end{subfigure}
-\caption{A simple experimental set-up for testing the stabilisation reaction in the robots upon impact. A mass (in red) is released from a height such that the pendulum is parallel to the ground.}
+\caption{A simple experimental set-up for testing the stabilisation reaction in the robots upon impact. A mass (in red) is released from a height such that the pendulum is parallel to the ground. Unfortunately no suitable masses could be found to provide quantifiable results.}
 \label{fig:silly_experiment}
 \end{figure}
 
@@ -353,11 +353,11 @@ Instead, a different test was performed. This involved releasing the robot from 
      &  \multicolumn{1}{c}{3}
      &  \multicolumn{1}{c}{\textbf{avg}} \\
     \cline{2-9}
-    $5\degree$ & 2.16 & 2.23 & 2.05 & \textbf{2.15} & 200 & 250 & 300 & \textbf{250} \\
-    $10\degree$ & 2.68 & 2.28 & 2.47 & \textbf{2.48} & 200 & 250 & 300 & \textbf{250} \\
-    $15\degree$ & 2.77 & 2.80 & 2.69 & \textbf{2.75} & 200 & 250 & 300 & \textbf{250} \\
-    $20\degree$ & 3.26 & 2.98 & 3.09 & \textbf{3.11} & 200 & 250 & 300 & \textbf{250} \\
-    $25\degree$ & -- & -- & -- & \textbf{--} & 200 & 250 & 300 & \textbf{250} \\
+    $5\degree$ & 2.16 & 2.23 & 2.05 & \textbf{2.15} & 1.58 & 1.40 & 1.77 & \textbf{1.58} \\
+    $10\degree$ & 2.68 & 2.28 & 2.47 & \textbf{2.48} & 2.19 & 1.91 & 2.39 & \textbf{2.16} \\
+    $15\degree$ & 2.77 & 2.80 & 2.69 & \textbf{2.75} & 2.45 & 2.37 & 2.65 & \textbf{2.49} \\
+    $20\degree$ & 3.26 & 2.98 & 3.09 & \textbf{3.11} & 2.99 & 3.30 & 3.07 & \textbf{3.12} \\
+    $25\degree$ & -- & -- & -- & \textbf{--} & -- & -- & -- & \textbf{--} \\
     \cline{2-9}
     \cline{2-9}
     \end{tabular}
@@ -365,22 +365,25 @@ Instead, a different test was performed. This involved releasing the robot from 
   \label{tab:results}
 \end{table}
 
+This work was presented at Robocup 2013 in The Netherlands for the Standard Platform League Open Challenge. Hengst's theoretical results\cite{bernhard_rl} were described, a short video of simulated policies was shown (also by Hengst), and the functional sagittal standing policy was demonstrated against a robot with no control policy. rUNSWift's Open Challenge entry was awarded $3^{rd}$ place.
+
+\section{Evaluation}
+
+The results of the stability response test show that for small perturbations the robot could recover stability significantly better with a control policy. Furthermore, the results also showed that performance did not ever degrade when compared to no control policy, so the sagittal control policy was not observed to cause diverging oscillations. This is not the case for the coronal control policies, where diverging oscillations could not be dampened even through heavy filtering of state measurements.
+
 A minor point to be made was when the robot was in a standing still state, very tiny adjustments were still being made by the motors, causing a very small (barely perceptible) oscillation of the torso back and forth. It is likely that this was caused by the significant noise apparent in the gyrometer measurements -- however, due to the nature of the noise, defining some noise threshold for adjusting the motors was not a simple task. The constant actuation of the motors is undersirable as it could potentially cause more wear and tears than without the control policy.
 
 The three-axis accelerometer was found to be too noisy to be of any significant use for any state measurements. While standing still, the accelerometer would report a large acceleration reading in the $z$-axis (as expected due to gravity), but also non-zero and wildly fluctuating accelerations in the $x$- and $y$-axes. Heavy filtering of these was found to be ineffective, as the offset from zero tended to drift randomly and in a non-Gaussian manner (making it difficult to filter). Integrating the non-Gaussian noise of course lead to a runaway velocity, which made the accelerometer unusable for measuring state.
 
 Similar issues were observed with the gyrometers, which provided extremely noisy measurements. However, the gyrometers provided a somewhat more stable and accurate reading for the torso angle than the noisy accelerometers. The angle measurement was enough for the sagittal goal to work as mentioned above.
 
-Despite the disappointing initial results, the work was presented at Robocup 2013 in The Netherlands for the Standard Platform League Open Challenge. The theoretical results of Hengst's work\cite{bernhard_rl} were described, a short video of simulated policies was shown (also by Hengst), and a the functioning standing policy was demonstrated against a robot with no control policy. rUNSWift's Open Challenge entry was awarded $3^{rd}$ place.
-
-\newpage
 \section{Future Work}
 
 State measurement is currently the biggest obstacle to overcome. Finding a reliable and accurate way to measure the robot's body state is by far the biggest contributor to future stability work. More complex state measurement may involve the use of the Nao's joint position sensors to create a map of the robot's body in three-dimensional space, along with accelerometer and gyrometer data to determine attitude.
 
 It is possible that simpler state measurement, such as tried in the work presented, may still allow for sufficient results through the use of more advanced filtering. The seemingly non-Gaussian nature of the noise in the sensors presented a challenge not able to be overcome by the author. However, as the results showed, even crude filtering could be used to some effect for the simpler stability problems like standing still.
 
-It is quite likely that relying on the angle measurement of the torso for coronal policies is not suffcient. A potential theory for this may be the opposing forces of the hip sway on the ankle and hip joints acting to restore the torso to a zero angle but leaving the torso in a laterally displaced location. However, as the position state variable is calculated only based on torso angle, it's possible that the robot would assume it to be back in a neutral position in this case. Further investigation is required.
+It is quite likely that relying on just the angle measurement of the torso for coronal policies is not suffcient, at least in the real-life tests. A potential theory for this may be the opposing forces of the hip sway on the ankle and hip joints acting to restore the torso to a zero angle but leaving the torso in a laterally displaced location. However, as the position state variable is calculated only based on torso angle, it's possible that the robot would assume it to be back in a neutral position in this case. Further investigation is required.
 
 Further improvements can also be made to the generic policy file interpreter. Most importantly, sharing a single policy file between multiple generators is a function that should be added, as currently the system may read and store in memory the same policy file multiple times if called by multiple motion generators. No memory or performance issues were found during testing, but it is possible that large \verb!C++! maps may not be the most efficient structure for storage, and this should be further investigated if deemed necessary.
 
