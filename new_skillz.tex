@@ -70,23 +70,33 @@ The rUNSWift codebase is split into the \verb!C++! backend and the \verb!Python!
 
 \texttt{runswift/robot/behaviour/python/PythonSkill.cpp}
 
-This defines the \verb!C++! to \verb!Python! interface. It also ensures that \textbf{live-reload} for skills works, such that a robot can be left running in a crashed state, new skills synced to it, and it will simply continue running as if it had never crashed.
+This defines the \verb!C++! to \verb!Python! interface. It also ensures that \textbf{live-reload} for skills works -- a robot can be left running in a crashed state, modified skills can be pushed to it, and it will simply continue running as if it had never crashed.
 
-The \verb!Python! entry-point is located in
-
-\texttt{runswift/image/home/nao/data/behaviours/cpp\_glue.py}
+The \verb!Python! entry-point is located in \texttt{runswift/image/home/nao/data/behaviours/cpp\_glue.py}
 
 On every tick, \texttt{cpp\_glue} ticks both the \texttt{TopLevelSkill} and \texttt{TopLevelHeadSkill}. Because the body's \texttt{TopLevelSkill} is ticked \textit{after} the head, any skills in the body skill tree can choose to delegate to a skill in the head tree and thus \textbf{override} the head tree's actions.
 
-All skills are located in:
-
-\texttt{runswift/image/home/nao/data/behaviours/skills}
+All skills are located in \texttt{runswift/image/home/nao/data/behaviours/skills}
 
 \subsection{In Real Life (IRL)}
 
+The \texttt{IRL} class is an abstraction of the state of the robot, and also an interface to perform actions, such as moving the head, walking, or kicking the ball.
+
+The \texttt{IRL} abstraction works to such that skills can rely on the state (known as \texttt{Sense}) and \texttt{Action}s, regardless of whether they come from the rUNSWift codebase, or from the simulator.\cite{simulator} This clearly allows for the same skills to be used for both platforms, with only the \texttt{Sense}s and \texttt{Actions} being written separately.
+
 \subsubsection{Sense}
 
+The \texttt{Sense IRL} defines a set of functions which provide the state of the robot at any instant. Running on the robots, the \texttt{Sense IRL} works simply as a wrapper for the rUNSWift \texttt{Blackboard}, which provides a shared state between all threads. Examples of \texttt{Sense}s include: \texttt{is\_ball\_visible()}, \texttt{game\_state()}, \texttt{is\_lost()}, and so on.
+
+\texttt{Sense}s are defined in \texttt{runswift/image/home/nao/data/behaviours/robot\_sense.py}
+
+Any skill can access the \texttt{Sense} functions by simply calling \texttt{self.irl.sense.\textit{some\_sense\_function()}}.
+
 \subsubsection{Action}
+
+The \texttt{Action IRL} defines a set of functions for interacting with the 
+
+Any leaf skill can perform an action by calling \texttt{self.irl.action.\textit{some\_action(argument)}}. By definition, actions are only allowed to occur inside the \texttt{tick} function of a skill (see Section~\ref{sec:tick}).
 
 \subsection{Skills}
 
@@ -97,8 +107,11 @@ Every skill in the skill tree is a subclass of \texttt{Skill}. \texttt{Skill} pr
 Both the \texttt{tick} and \texttt{delegate} functions can be defined with required and optional arguments. These arguments are supplied when skills delegate to other skills. This process is described more in Section~\ref{sec:delegate}.
 
 \subsubsection{Tick}
+\label{sec:tick}
 
-The \texttt{tick} function is defined only for leaf skills which do not expect to delegate to any other skills and expect to perform some \texttt{IRL} Action.
+The \texttt{tick} function is defined only for leaf skills which do not expect to delegate to any other skills, and instead expect to perform some \texttt{IRL} Action.
+
+Good design is to have very atomic leaf skills that perform a single action, perhaps with some parameters, but with little to no conditional logic.
 
 \subsubsection{Delegate}
 \label{sec:delegate}
@@ -111,7 +124,7 @@ All \verb!Python! runtime exceptions and errors are caught by \texttt{cpp\_glue}
 
 Under ``Emergency mode'', the robot stops all movement, flashes all its LEDs in random colours, and audibly requests to be picked up (for use in the competition). The stack trace produced by \verb!Python! is able to show the faulting skill as well as its parent skill (which delegated to it), but no further up the line. If a bigger stack trace is required, simply print out the skill name in the \texttt{tick} function of \texttt{Skill}.
 
-Also, thanks to the live-reload functionality built into \texttt{cpp\_glue}, new skills can be pushed to the robot or even edited directly on the robot. Once a \verb!Python! file is modified on the robot, \textit{NewSkillz} reloads all skills and the robot continues from whatever state it was in (as the \texttt{Blackboard} maintains state which the \texttt{IRL} accesses).
+Also, thanks to the live-reload functionality built into \texttt{cpp\_glue}, new skills can be pushed to the robot or even edited directly on the robot. Once a \verb!Python! file is modified on the robot, \textit{NewSkillz} reloads all skills and the robot continues from whatever state it was in (as the \texttt{Blackboard} state is preserved).
 
 \section{Results \& Evaluation}
 
