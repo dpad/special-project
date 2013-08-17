@@ -8,7 +8,7 @@ The \textit{NewSkillz} behaviour framework is a new implementation of the \verb!
 
 The 2012 behaviours were ported in a mostly-working state to the \textit{NewSkillz} framework, as a proof-of-concept. Examples in this section will stem from this proof-of-concept implementation.
 
-As it required the effort of many authors, information about \textit{NewSkillz} is spread throughout various reports. In particular, more information about the integration with a simulator and the reasoning behind the framework can be found in the report by Crane and Sherratt.\cite{simulator} The focus of this section therefore is to provide a gentle introduction to implementing skills using the \textit{NewSkillz} framework, as well as documentation of its major features. Note that the terms \textit{behaviours} and \textit{skills} are used interchangeably throughout the text.
+As it required the effort of many authors, information about \textit{NewSkillz} is spread throughout various reports. In particular, more information about the integration with a simulator and the reasoning behind the framework can be found in the report by Crane and Sherratt.\cite{simulator} The focus of this section therefore is to provide a gentle introduction to implementing skills using the \textit{NewSkillz} framework, as well as documentation of its major features. Note that the terms \textit{behaviour}, \textit{skill}, and sometimes \textit{state}, are used interchangeably throughout the text.
 
 \section{Theory}
 
@@ -31,7 +31,36 @@ To better illustrate this concept, the skill tree for the proof-of-concept port 
 
 Notice that the tree contains two root nodes, being \texttt{TopLevelSkill} and \texttt{TopLevelHeadSkill}. This allows for decisions to be made for the body and head separately.
 
-The skill tree system provides cleaner and less redundant code through the delegation mechanism. It is easy to imagine this by taking the state machine of the head as an example.
+The skill tree system provides cleaner and less redundant code through the delegation mechanism. It is easy to imagine this by taking the state machine of the head as in the example provided by Figure~\ref{fig:state_machine}.
+
+\begin{figure}[h]
+\centering
+\begin{subfigure}{0.45\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{img/state_machine_old.png}
+  \caption{2012 framework}
+  \label{fig:state_machine_old}
+\end{subfigure}
+\begin{subfigure}{0.45\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{img/state_machine_newskillz.png}
+  \caption{\textit{NewSkillz} framework}
+  \label{fig:state_machine_newskillz}
+\end{subfigure}
+\caption{Example of the state machine approach of the 2012 skills framework, and the \textit{NewSkillz} skill tree approach.}
+\label{fig:state_machine}
+\end{figure}
+
+While the 2012 state machine may look simpler, code inspection reveals a much more complex system. For starters, each skill (which we will refer to as a state) in the 2012 framework must include a state transition function defining when to transition to a different state. States can transition to states which transition back to the parent states, or they can transition in only one-way -- this requires redundant checks for the condition to transition back into a state. Furthermore, any state can potentially cause an action or only perform state transitions. While this framework allows for much flexibility, it requires a much greater learning curve and unintuitive coding style.
+
+By contrast, the \textit{NewSkillz} skill tree may look equally complicated, but becomes significantly easier to understand and write for once the required properties are understood:
+
+\begin{itemize}
+\item All state transitions are one-way.
+\item A state/skill may only transition to another state, or perform an action, but not do both.
+\end{itemize}
+
+These properties inherently create a state-machine, so they allow for the same flexibility as the 2012 framework, albeit not in the same way. For example, a \textit{NewSkillz} skill cannot possibly be written in such a way that it can do both state transitions \textit{and} perform an action. Instead, the programmer is forced to partition the skill into a decision and its possible actions, leading to simpler modular code.
 
 \section{Implementation}
 
@@ -49,6 +78,10 @@ The \verb!Python! entry-point is located in
 
 On every tick, \texttt{cpp\_glue} ticks both the \texttt{TopLevelSkill} and \texttt{TopLevelHeadSkill}. Because the body's \texttt{TopLevelSkill} is ticked \textit{after} the head, any skills in the body skill tree can choose to delegate to a skill in the head tree and thus \textbf{override} the head tree's actions.
 
+All skills are located in:
+
+\texttt{runswift/image/home/nao/data/behaviours/skills}
+
 \subsection{In Real Life (IRL)}
 
 \subsubsection{Sense}
@@ -61,9 +94,14 @@ The \texttt{Skill} class is the ``bread and butter'' of the \textit{NewSkillz} f
 
 Every skill in the skill tree is a subclass of \texttt{Skill}. \texttt{Skill} provides two functions: \texttt{tick} and \texttt{delegate}. When implementing a skill, exactly \textbf{one} of these functions must be overloaded, depending on whether the skill expects to \textit{delegate} its decision to another skill, or \textit{tick} an \texttt{IRL} Action.
 
+Both the \texttt{tick} and \texttt{delegate} functions can be defined with required and optional arguments. These arguments are supplied when skills delegate to other skills. This process is described more in Section~\ref{sec:delegate}.
+
 \subsubsection{Tick}
 
+The \texttt{tick} function is defined only for leaf skills which do not expect to delegate to any other skills and expect to perform some \texttt{IRL} Action.
+
 \subsubsection{Delegate}
+\label{sec:delegate}
 
 \subsection{Geometry}
 
